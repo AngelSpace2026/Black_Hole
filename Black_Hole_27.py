@@ -72,7 +72,7 @@ class compression:
                         
 
                         Number_of_the_file =((((Number_of_the_file * Square_of_ROOT) + Add_Numbers) // 3) * Multiply)
-                        print(Number_of_the_file)
+                        #print(Number_of_the_file)
 
                         F=0
 
@@ -321,7 +321,7 @@ class compression:
 
 
 
-                                    #from qiskit import QuantumCircuit
+                                    from qiskit import QuantumCircuit
 
                                             
 
@@ -399,9 +399,9 @@ class compression:
 
                                             Universe=int(Universe)
                                             University=int(k2)
-                                            #circuit = QuantumCircuit(Universe)
+                                            circuit = QuantumCircuit(Universe)
 
-                                            #QuantumCircuit(University)
+                                            QuantumCircuit(University)
 
                                             
 
