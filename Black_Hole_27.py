@@ -829,7 +829,7 @@ class compression:
 
                                                 
 
-                                    #from qiskit import QuantumCircuit
+                                    from qiskit import QuantumCircuit
 
                                             
 
@@ -902,10 +902,10 @@ class compression:
 
                                             Universe=int(Universe)
                                             University=int(k2)
-                                            #circuit = QuantumCircuit(Universe)
+                                            circuit = QuantumCircuit(Universe)
                                             
 
-                                            #QuantumCircuit(University)
+                                            QuantumCircuit(University)
 
                                             
 
