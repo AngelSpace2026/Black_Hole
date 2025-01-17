@@ -653,13 +653,13 @@ class compression:
 
                                                         File_information6_Times2=0
 
-                                                        if int(INFO,2)==Number_of_the_file or 3600*6  
+                                                        if int(INFO,2)==Number_of_the_file or 3600*6:
 
                                                                if C==1:
 
                                                                        C=1
 
-                                                if int(INFO,2)==Number_of_the_file and File_information6_Times2_1==Times_12 or x==3600*6
+                                                if int(INFO,2)==Number_of_the_file and File_information6_Times2_1==Times_12 or x==3600*6:
 
                                                        long_1=len(File_information5_17)
 
