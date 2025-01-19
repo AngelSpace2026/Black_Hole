@@ -367,23 +367,13 @@ class compression:
                                             finish1 = 0
                                             times = 0
                                             count_number = 0
-											from qiskit import QuantumCircuit
-											
-											# Initial setup
-											circuit = QuantumCircuit(26)  # Start with a circuit of 26 qubits
-											count_number = 0  # Initialize a counter
-											finish1 = 0  # Define and initialize finish1 (set condition to exit loop)
-											
-											# Loop to modify the circuit
-											while finish1 != 1:
-											    count_number += 1  # Increment count_number
-											    if count_number > 25:  # Example condition to break the loop
-											        finish1 = 1
-											    else:
-											        circuit.add_register(QuantumCircuit(count_number))  # Add operations or extend circuit
-											
-											# Print the circuit
-											#print(circuit)
+                                            
+                                            from qiskit import QuantumCircuit
+                                            circuit = QuantumCircuit(26)
+                                            count_number = 0
+                                            while finish1 != 1:
+                                                count_number=int(count_number)
+                                                QuantumCircuit(count_number)
                                                 num = count_number
                                                 #print(count_number)
 
@@ -685,7 +675,7 @@ class compression:
 
                                     if (
                                         long_one_time <= 256
-                                        and  times_compress == Compress_Times_1-1
+                                        and times_compress >= 0
                                         or times_compress == Compress_Times_1-1
                                     ):
                                         stop_compress = 1
@@ -993,23 +983,13 @@ class compression:
 	                                            finish1 = 0
 	                                            times = 0
 	                                            count_number = 0
-												from qiskit import QuantumCircuit
-												
-												# Initial setup
-												circuit = QuantumCircuit(26)  # Start with a circuit of 26 qubits
-												count_number = 0  # Initialize a counter
-												finish1 = 0  # Define and initialize finish1 (set condition to exit loop)
-												
-												# Loop to modify the circuit
-												while finish1 != 1:
-												    count_number += 1  # Increment count_number
-												    if count_number > 25:  # Example condition to break the loop
-												        finish1 = 1
-												    else:
-												        circuit.add_register(QuantumCircuit(count_number))  # Add operations or extend circuit
-												
-												# Print the circuit
-												#print(circuit)
+	                                            from qiskit import QuantumCircuit
+	                                            circuit = QuantumCircuit(26)
+	                                            count_number = 0
+	                                            while finish1 != 1:
+                                                        	                                                
+	                                                count_number=int(count_number)
+	                                                QuantumCircuit(count_number)
 	                                                num = count_number
 	                                                #print(num)
 	                                                binary_representation_before = (
