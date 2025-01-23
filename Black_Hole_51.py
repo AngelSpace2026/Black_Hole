@@ -611,8 +611,8 @@ class compression:
                                                                     + length_tree_after
 
                                                                 )       
-                                                                elif count_number+2176==num_c:
-                                                                	count_number=count_number+2176
+                                                                elif count_number+512==num_c:
+                                                                	count_number=count_number+512
                                                                 	IFC = (
                                                                     "11"+"0"
                                                                     + length_tree_after2
@@ -1115,7 +1115,7 @@ class compression:
 	                                                                	
 	                                                                	                                                                  	                           	
 	                                                                elif NC==3:
-	                                                                	count_number=count_number+2176     	                                                                	                                                                  	                           	                                                                  	                           	                                                                  	                           	
+	                                                                	count_number=count_number+512    	                                                                	                                                                  	                           	                                                                  	                           	                                                                  	                           	
 	
 	                                                                IFC = format(
 	                                                                    count_number,
