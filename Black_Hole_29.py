@@ -709,7 +709,7 @@ class compression:
 
                                                                if count_bits!=0:
 
-                                                                       while z<count_bits and count_bits<=8:
+                                                                       while z<count_bits or count_bits==8:
 
                                                                                add_bits="0"+add_bits
 
