@@ -540,8 +540,7 @@ class compression:
                                                                 )
                                                                 if count_number>2**25:
                                                                 	IFC="111"+ T8
-                                                                constants = [
-    0, 512, 256, 384, 1152, 1664, 1408, 1536,
+                                                                constants = [0, 512, 256, 384, 1152, 1664, 1408, 1536,
     2304, 2816, 2560, 2688, 3456, 3968, 3712,
     3840, 4608, 5120, 4864, 4992, 5760]
                                                                 for i, constant in enumerate(constants):
