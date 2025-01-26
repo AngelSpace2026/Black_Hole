@@ -550,12 +550,7 @@ class compression:
                                                                 		
                                                             
                                                                 IFC = (
-																	        five_bit_prefix  # Five-bit binary prefix
-																	        + length_tree_after2
-																	        + binary_representation
-																	        + binary_representation_before_long1
-																	        + length_tree_after
-																	    )
+                                                                	five_bit_prefix+length_tree_after2+binary_representation+binary_representation_before_long1+length_tree_after)
 																	    
                                                                 		#print(IFC)
 																	    
