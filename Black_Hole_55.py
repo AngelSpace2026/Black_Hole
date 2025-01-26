@@ -540,7 +540,55 @@ class compression:
                                                                 )
                                                                 if count_number>2**25:
                                                                 	IFC="111"+ T8
-                                                                constants = [0, 512, 256, 384, 1152, 1664, 1408, 1536, 2304, 2816, 2560, 2688, 3456, 3968, 3712, 3840, 4608, 5120, 4864, 4992, 5760]
+                                                                constants = [
+    # Zero and Base Values
+    0,      # Baseline
+    256,    # 2^8
+    512,    # 2^9
+    384,    # 6 * 64
+    
+    # First Block
+    1152,   # 9 * 128
+    1408,   # 11 * 128
+    1536,   # 12 * 128
+    1664,   # 13 * 128
+    
+    # Second Block
+    2304,   # 18 * 128
+    2560,   # 20 * 128
+    2688,   # 21 * 128
+    2816,   # 22 * 128
+    
+    # Third Block
+    3456,   # 27 * 128
+    3712,   # 29 * 128
+    3840,   # 30 * 128
+    3968,   # 31 * 128
+    
+    # Fourth Block
+    4608,   # 36 * 128
+    4864,   # 38 * 128
+    4992,   # 39 * 128
+    5120,   # 40 * 128
+    
+    # Final Value
+    5760,   # 45 * 128
+    
+    # Extended Range
+    6144,   # 48 * 128
+    6272,   # 49 * 128
+    6400,   # 50 * 128
+    6528,   # 51 * 128
+    6656,   # 52 * 128
+    
+    # Quantum-Inspired
+    7168,   # 56 * 128
+    7424,   # 58 * 128
+
+    
+    # High-Range
+
+]
                                                                 for i, constant in enumerate(constants):
                                                                 		five_bit_prefix=""
                                                                 		
@@ -995,8 +1043,55 @@ class compression:
 	                                                                    count_number
 	                                                                    - 1
 	                                                                )
-	                                                                
-	                                            constants = [0, 512, 256, 384, 1152, 1664, 1408, 1536,2304, 2816, 2560, 2688, 3456, 3968, 3712,3840, 4608, 5120, 4864, 4992, 5760]
+	                                                                constants = [
+    # Zero and Base Values
+    0,      # Baseline
+    256,    # 2^8
+    512,    # 2^9
+    384,    # 6 * 64
+    
+    # First Block
+    1152,   # 9 * 128
+    1408,   # 11 * 128
+    1536,   # 12 * 128
+    1664,   # 13 * 128
+    
+    # Second Block
+    2304,   # 18 * 128
+    2560,   # 20 * 128
+    2688,   # 21 * 128
+    2816,   # 22 * 128
+    
+    # Third Block
+    3456,   # 27 * 128
+    3712,   # 29 * 128
+    3840,   # 30 * 128
+    3968,   # 31 * 128
+    
+    # Fourth Block
+    4608,   # 36 * 128
+    4864,   # 38 * 128
+    4992,   # 39 * 128
+    5120,   # 40 * 128
+    
+    # Final Value
+    5760,   # 45 * 128
+    
+    # Extended Range
+    6144,   # 48 * 128
+    6272,   # 49 * 128
+    6400,   # 50 * 128
+    6528,   # 51 * 128
+    6656,   # 52 * 128
+    
+    # Quantum-Inspired
+    7168,   # 56 * 128
+    7424,   # 58 * 128
+
+    
+    # High-Range
+
+]
 	                                            constant_map = {format(i, "05b"): constants[i] for i in range(len(constants))}
 	                                            if (five_bit_pattern := INFO[block:block+5]) in constant_map:
 	                                            	TUPLE += format(count_number + constant_map[five_bit_pattern], "025b")
