@@ -26,8 +26,6 @@ class compression:
         if N5 == 1:
 
             Clear = ""
-            
-
 
             name = input("What is name of file input? ")
 
@@ -42,7 +40,6 @@ class compression:
             else:
 
                 i = 1
-            
 
             # print(i)
             if os.path.exists(name):
@@ -158,14 +155,16 @@ class compression:
                         long_12 = len(File_information5_2)
 
                         if i == 1:
-                        	Compress_Times_1=int(input("How many times compress? "))
-                        	if Compress_Times_1>=(2**256)-2:
-                        		Compress_Times_1=(2**256)-2
-                        	if Compress_Times_1<1:
-                        		Compress_Times_1=1
-                        	if long_17 > (2**28) - 1 and i == 1:
-                        		print("print file is too big!")
-                        		raise SystemExit
+                            Compress_Times_1 = int(
+                                input("How many times compress? ")
+                            )
+                            if Compress_Times_1 >= (2**256) - 2:
+                                Compress_Times_1 = (2**256) - 2
+                            if Compress_Times_1 < 1:
+                                Compress_Times_1 = 1
+                            if long_17 > (2**28) - 1 and i == 1:
+                                print("print file is too big!")
+                                raise SystemExit
 
                         if i == 1:
 
@@ -250,7 +249,7 @@ class compression:
                                         if len(T8) != 25:
 
                                             T10 += "11111" + T8  # left bits
-                                            #print(T8)
+                                            # print(T8)
 
                                         elif len(T8) == 25:
 
@@ -260,7 +259,7 @@ class compression:
                                             )  # Convert binary to decimal
 
                                             num_c = num
-                                            #print(num)
+                                            # print(num)
                                             # num check
                                             # print(f"Converted binary {T8} to decimal: {num}")
                                             # Initial calculation
@@ -329,7 +328,7 @@ class compression:
                                                             binary_representation,
                                                             2,
                                                         )
-                                                        Bif = format(Bi, '01b')
+                                                        Bif = format(Bi, "01b")
                                                         Bif1 = len(Bif)
                                                         # print(len(binary_representation))
                                                         # print(f"{binary_representation}: {index}")
@@ -367,22 +366,22 @@ class compression:
                                             finish1 = 0
                                             times = 0
                                             count_number = 0
-                                            
+
                                             from qiskit import QuantumCircuit
+
                                             circuit = QuantumCircuit(26)
                                             count_number = 0
                                             while finish1 != 1:
-                                                count_number=int(count_number)
+                                                count_number = int(
+                                                    count_number
+                                                )
                                                 QuantumCircuit(count_number)
                                                 num = count_number
-                                                #print(count_number)
+                                                # print(count_number)
 
-                                               
-                                              		
-
-                                                #print(num)
-                                                binary_representation_before = (
-                                                    len(format(num, "01b"))
+                                                # print(num)
+                                                binary_representation_before = len(
+                                                    format(num, "01b")
                                                 )
                                                 finish = 0
                                                 times = 0
@@ -439,7 +438,7 @@ class compression:
                                                                 2,
                                                             )
                                                             Bif = format(
-                                                                Bi3, '01b'
+                                                                Bi3, "01b"
                                                             )
                                                             Bif2 = len(Bif)
 
@@ -451,9 +450,7 @@ class compression:
                                                                 binary_to_number,
                                                                 "01b",
                                                             )
-                                                            num = (
-                                                                binary_to_number
-                                                            )
+                                                            num = binary_to_number
                                                             # print(num)
                                                             # print(index)
                                                             length_tree = len(
@@ -465,16 +462,18 @@ class compression:
                                                                     1
                                                                 )
                                                                 finish = 2
-                                                                
-                                                            #print(num)
+
+                                                            # print(num)
                                                             if (
                                                                 length_tree < 8
                                                                 and binary_representation_before
                                                                 == binary_representation_before_long
                                                                 and times_after
                                                                 == times
-                                                                and Bif1 == Bif2
-                                                                and Bi == Bi3 or num>2**25
+                                                                and Bif1
+                                                                == Bif2
+                                                                and Bi == Bi3
+                                                                or num > 2**25
                                                             ):
                                                                 finish1 = 1
                                                                 # print("binary_representation_before_long")
@@ -486,16 +485,14 @@ class compression:
                                                                 # print(length_tree_after)
                                                                 # print("binary_to_number_number_after")
                                                                 # print(binary_to_number_number_after)
-                                                                #print(count_number)
+                                                                # print(count_number)
                                                                 count_number = (
                                                                     count_number
                                                                     - 1
                                                                 )
                                                                 # print(length_tree)
-                                                              
-                                                          
-                                                 
-                                                                #256
+
+                                                                # 256
 
                                                                 # print(times_after)#long after
 
@@ -520,9 +517,9 @@ class compression:
                                                                     times_after,
                                                                     "03b",
                                                                 )
-                                                                #print(binary_representation_before_long1)
+                                                                # print(binary_representation_before_long1)
                                                                 # print(binary_representation_before)
-                                                                
+
                                                                 length_tree_after = format(
                                                                     binary_representation_before_long,
                                                                     "05b",
@@ -539,90 +536,103 @@ class compression:
                                                                     length_tree_after1,
                                                                     "03b",
                                                                 )
-                                                                if count_number>2**25:
-                                                                	IFC="11111"+ T8
+                                                                if (
+                                                                    count_number
+                                                                    > 2**25
+                                                                ):
+                                                                    IFC = (
+                                                                        "11111"
+                                                                        + T8
+                                                                    )
 
                                                                 # print(binary_representation_before)
-                                                                
+
                                                                 #
-                                                                #constants = [0, 256, 512, 384, 1152, 1408, 1536, 1664, 2304, 2560, 2688, 2816, 3456, 3712, 3840, 3968, 4608, 4864, 4992, 5120, 5760, 6144, 6272, 6400, 6528, 6656, 7168, 7424]
- # List of constants
-# Constants and their respective five-bit binary representations
-                                                                
+                                                                # constants = [0, 256, 512, 384, 1152, 1408, 1536, 1664, 2304, 2560, 2688, 2816, 3456, 3712, 3840, 3968, 4608, 4864, 4992, 5120, 5760, 6144, 6272, 6400, 6528, 6656, 7168, 7424]
+                                                                # List of constants
                                                                 # Constants and their respective five-bit binary representations
-                                                                
+
+                                                                # Constants and their respective five-bit binary representations
+
                                                                 # Constants and their respective five-bit binary representations
                                                                 # Constants and their respective five-bit binary representations
                                                                 # Constants and their respective five-bit binary representations
                                                                 constants_map = {
-    0: "00000",
-    256: "00001",
-    512: "00010",
-    384: "00011",
-    1152: "00100",
-    1408: "00101",
-    1536: "00110",
-    1664: "00111",
-    2304: "01000",
-    2560: "01001",
-    2688: "01010",
-    2816: "01011",
-    3456: "01100",
-    3712: "01101",
-    3840: "01110",
-    3968: "01111",
-    4608: "10000",
-    4864: "10001",
-    4992: "10010",
-    5120: "10011",
-    5760: "10100",
-    6144: "10101",
-    6272: "10110",
-    6400: "10111",
-    6528: "11000",
-    6656: "11001",
-    7168: "11010",
-    7424: "11011",
-    7552: "11100",
-    7680: "11101",
-    896: "11110",
-}
-															
+                                                                    0: "00000",
+                                                                    256: "00001",
+                                                                    512: "00010",
+                                                                    384: "00011",
+                                                                    1152: "00100",
+                                                                    1408: "00101",
+                                                                    1536: "00110",
+                                                                    1664: "00111",
+                                                                    2304: "01000",
+                                                                    2560: "01001",
+                                                                    2688: "01010",
+                                                                    2816: "01011",
+                                                                    3456: "01100",
+                                                                    3712: "01101",
+                                                                    3840: "01110",
+                                                                    3968: "01111",
+                                                                    4608: "10000",
+                                                                    4864: "10001",
+                                                                    4992: "10010",
+                                                                    5120: "10011",
+                                                                    5760: "10100",
+                                                                    6144: "10101",
+                                                                    6272: "10110",
+                                                                    6400: "10111",
+                                                                    6528: "11000",
+                                                                    6656: "11001",
+                                                                    7168: "11010",
+                                                                    7424: "11011",
+                                                                    7552: "11100",
+                                                                    7680: "11101",
+                                                                    896: "11110",
+                                                                }
 
-                                                                number_from_map=num_c- count_number 
-                                                                #print(number_from_map)                                                            
-                                                                num_c = number_from_map + count_number                                                                
-                                                                if number_from_map in constants_map:
-                                                                	binary_representation2= constants_map[number_from_map]
-                                                                	count_number=num_c
-                                                                	
-                                                                	IFC = (
-        binary_representation2
-        + length_tree_after2
-        + binary_representation
-        + binary_representation_before_long1
-        + length_tree_after
-    )
-                                                                	#print(len(IFC))
+                                                                number_from_map = (
+                                                                    num_c
+                                                                    - count_number
+                                                                )
+                                                                # print(number_from_map)
+                                                                num_c = (
+                                                                    number_from_map
+                                                                    + count_number
+                                                                )
+                                                                if (
+                                                                    number_from_map
+                                                                    in constants_map
+                                                                ):
+                                                                    binary_representation2 = constants_map[
+                                                                        number_from_map
+                                                                    ]
+                                                                    count_number = (
+                                                                        num_c
+                                                                    )
 
+                                                                    IFC = (
+                                                                        binary_representation2
+                                                                        + length_tree_after2
+                                                                        + binary_representation
+                                                                        + binary_representation_before_long1
+                                                                        + length_tree_after
+                                                                    )
+                                                                    # print(len(IFC))
 
-
-  
-
-
-    # If a match was found, generate the IF
-                                                                
-    
-    
+                                                                # If a match was found, generate the IF
 
                                                                 else:
-                                                                	IFC="11111"+T8
+                                                                    IFC = (
+                                                                        "11111"
+                                                                        + T8
+                                                                    )
                                                                 # print(length_tree_after2)
                                                                 # print(length_tree_after)
                                                                 # print(binary_representation_before_long1)
                                                                 # print(binary_representation)
-                                                                #print(len(IFC))
-                                                                
+                                                                # print(len(IFC))
+
                                                                 if (
                                                                     len(IFC)
                                                                     <= 24
@@ -645,19 +655,20 @@ class compression:
                                                                     )
                                                                     == 3
                                                                 ):
-                                                                    T10 +=IFC
+                                                                    T10 += IFC
                                                                 else:
-                                                                    
+
                                                                     num2 = int(
-                                                                    T8, 2)
+                                                                        T8, 2
+                                                                    )
                                                                     IFC = format(
                                                                         num2,
-                                                                        "025b",)
+                                                                        "025b",
+                                                                    )
                                                                     T10 += (
-                                                                        
-                                                                        	"11111"+IFC)         
-                                              
-                                                                   
+                                                                        "11111"
+                                                                        + IFC
+                                                                    )
 
                                     INFO = T10
                                     T8 = T10
@@ -667,13 +678,13 @@ class compression:
                                     if (
                                         long_one_time <= 256
                                         and times_compress >= 0
-                                        or times_compress == Compress_Times_1-1
+                                        or times_compress
+                                        == Compress_Times_1 - 1
                                     ):
                                         stop_compress = 1
                                         Compress_file = 1
                                     long_bits_after_b_1 = 1
                                     times_compress += 1
-                                    
 
                                 # print(Compress_file)
                                 if Compress_file == 1:
@@ -763,8 +774,6 @@ class compression:
                                         x2 = time()
 
                                         x3 = x2 - x
-
-
 
                                         print("checker seccefully")
 
@@ -859,7 +868,7 @@ class compression:
                                     # 1 bits 21
                                     # 0 19
                                     long_F = len(INFO)
-                                    NC=0
+                                    NC = 0
                                     # print(long_F)
 
                                     block = 0
@@ -868,267 +877,333 @@ class compression:
                                         take_c_or_l = INFO[block : block + 24]
                                         long_l = len(take_c_or_l)
                                         # print(long_l)
-                                        
+
                                         if INFO[block : block + 5] == "11111":
                                             block += 5
                                             T8 = INFO[block : block + 25]
                                             TUPLE += T8
                                             block += 25
 
-                                        elif INFO[block : block + 5] != "11111":
-                                        	
-                                        	                                        	
-                                        	
-                                        	if INFO[block : block + 1]=="0":
-                                        	   
-                                        	   find_c_v=0
-                                        	else:
-                                        	   
-                                        	   find_c_v=50
-                                        	   #print(find_c_v)
-                                            
-                                            # print(take_c_or_l)
+                                        elif (
+                                            INFO[block : block + 5] != "11111"
+                                        ):
 
-                                            # print("4")
-                                            # print(len(num3))
-                                            # print(num3)
-                                            # binary_representation+length_tree_after+binary_representation_before_long1#
+                                            if INFO[block : block + 1] == "0":
 
-                                            # print(length_tree_after) #long after
-                                            # print(times_after)#binary repreatation
-                                            # print(binary_representation_before_long)#long before file
-                                            # print(times_after)#long after
+                                                find_c_v = 0
+                                            else:
 
-                                            # print(binary_representation_before_long)#long after
+                                                find_c_v = 50
+                                                # print(find_c_v)
 
-                                            # 
-                                        	mapping = {
-    "00000": 1, "00001": 2, "00010": 3, "00011": 4, "00100": 5, "00101": 6, "00110": 7,
-    "00111": 8, "01000": 9, "01001": 10, "01010": 11, "01011": 12, "01100": 13, "01101": 14,
-    "01110": 15, "01111": 16, "10000": 1, "10001": 2, "10010": 3, "10011": 4, "10100": 5,
-    "10101": 6, "10110": 7, "10111": 8, "11000": 9, "11001": 10, "11010": 11, "11011": 12,
-    "11100": 13, "11101": 14, "11110": 15
-}
+                                                # print(take_c_or_l)
 
-                                        	if INFO[block:block+5] in mapping:
-                                        		NC = mapping[INFO[block:block+5]]
-                                        		block += 5
-                                        		if find_c_v == 50:
-                                        			find_c_v = 50
-                                        		else:
-                                        			find_c_v = NC
+                                                # print("4")
+                                                # print(len(num3))
+                                                # print(num3)
+                                                # binary_representation+length_tree_after+binary_representation_before_long1#
 
+                                                # print(length_tree_after) #long after
+                                                # print(times_after)#binary repreatation
+                                                # print(binary_representation_before_long)#long before file
+                                                # print(times_after)#long after
 
+                                                # print(binary_representation_before_long)#long after
 
+                                                #
+                                            mapping = {
+                                                "00000": 1,
+                                                "00001": 2,
+                                                "00010": 3,
+                                                "00011": 4,
+                                                "00100": 5,
+                                                "00101": 6,
+                                                "00110": 7,
+                                                "00111": 8,
+                                                "01000": 9,
+                                                "01001": 10,
+                                                "01010": 11,
+                                                "01011": 12,
+                                                "01100": 13,
+                                                "01101": 14,
+                                                "01110": 15,
+                                                "01111": 16,
+                                                "10000": 1,
+                                                "10001": 2,
+                                                "10010": 3,
+                                                "10011": 4,
+                                                "10100": 5,
+                                                "10101": 6,
+                                                "10110": 7,
+                                                "10111": 8,
+                                                "11000": 9,
+                                                "11001": 10,
+                                                "11010": 11,
+                                                "11011": 12,
+                                                "11100": 13,
+                                                "11101": 14,
+                                                "11110": 15,
+                                            }
 
+                                            if (
+                                                INFO[block : block + 5]
+                                                in mapping
+                                            ):
+                                                NC = mapping[
+                                                    INFO[block : block + 5]
+                                                ]
+                                                block += 5
+                                                if find_c_v == 50:
+                                                    find_c_v = 50
+                                                else:
+                                                    find_c_v = NC
 
+                                            if find_c_v == find_c_v:
+                                                # print(block)
+                                                Bif1 = int(
+                                                    (INFO[block : block + 3]),
+                                                    2,
+                                                )
+                                                Bif1 += 1
+                                                block += 3
+                                                # print(block)
+                                                if Bif1 == 0:
+                                                    read_b == 1
+                                                else:
+                                                    read_b = Bif1
+                                                Bi3 = int(
+                                                    (
+                                                        INFO[
+                                                            block : block
+                                                            + read_b
+                                                        ]
+                                                    ),
+                                                    2,
+                                                )
+                                                # print(times_after)
 
+                                                block += read_b
+                                                # print(block)
+                                                times_after = int(
+                                                    (INFO[block : block + 3]),
+                                                    2,
+                                                )
+                                                times_after = times_after + 1
+                                                # print(binary_representation_before_long)
 
+                                                block += 3
+                                                # print(block)
 
+                                                binary_representation_before_long = int(
+                                                    (INFO[block : block + 5]),
+                                                    2,
+                                                )
+                                                # print(binary_to_number_number_after)
 
-                                            
+                                                block += 5
+                                                # print(block)
 
-	                                            	
-                                        	if find_c_v==find_c_v: 
-                                        	    #print(block)                                                                           
-	                                            Bif1 = int(
-	                                                (INFO[block : block + 3]), 2
-	                                            )
-	                                            Bif1 += 1
-	                                            block += 3
-	                                            #print(block)
-	                                            if Bif1==0:
-	                                            	read_b==1
-	                                            else:
-	                                                read_b=Bif1                                                                                                                                                                                                                                                                                               
-	                                            Bi3 = int(
-	                                                (INFO[block : block + read_b]), 2
-	                                            )
-	                                            # print(times_after)
-	
-	                                            block += read_b
-	                                            #print(block)
-	                                            times_after = int(
-	                                                (INFO[block : block + 3]), 2
-	                                            )
-	                                            times_after = times_after + 1
-	                                            # print(binary_representation_before_long)
-	
-	                                            block += 3
-	                                            #print(block)
-	
-	                                            binary_representation_before_long = int(
-	                                                (INFO[block : block + 5]), 2
-	                                            )
-	                                            # print(binary_to_number_number_after)
-	
-	                                            block += 5
-	                                            #print(block)
-	
-	
-	                                            # open 3 key
-	                                            # binary length tree start and finish and binanary represation
-	
-	                                            # print(len(num3))
-	
-	                                            # Continuation: another loop to perform further calculations
-	                                            
-	                                            finish = 0
-	                                            finish1 = 0
-	                                            times = 0
-	                                            count_number = 0
-	                                            from qiskit import QuantumCircuit
-	                                            circuit = QuantumCircuit(26)
-	                                            count_number = 0
-	                                            while finish1 != 1:
-                                                        	                                                
-	                                                count_number=int(count_number)
-	                                                QuantumCircuit(count_number)
-	                                                num = count_number
-	                                                #print(num)
-	                                                binary_representation_before = (
-	                                                    len(format(num, "01b"))
-	                                                )
-	                                                finish = 0
-	                                                times = 0
-	                                                while finish != 2:
-	                                                    if num < 0:
-	                                                        print(
-	                                                            "Please enter a non-negative integer."
-	                                                        )
-	                                                    else:
-	                                                        max_length = len(
-	                                                            format(num, "b")
-	                                                        )
-	                                                        binary_numbers = []
-	                                                        for length in range(
-	                                                            1, max_length + 1
-	                                                        ):
-	                                                            for i in range(
-	                                                                2**length
-	                                                            ):
-	                                                                binary_numbers.append(
-	                                                                    format(
-	                                                                        i,
-	                                                                        "0"
-	                                                                        + str(
-	                                                                            length
-	                                                                        )
-	                                                                        + "b",
-	                                                                    )
-	                                                                )
-	                                                        last_binary = None
-	                                                        for (
-	                                                            index,
-	                                                            binary,
-	                                                        ) in enumerate(
-	                                                            binary_numbers
-	                                                        ):
-	                                                            if index > num:
-	                                                                break
-	                                                            last_binary = (
-	                                                                binary,
-	                                                                index,
-	                                                            )
-	                                                        if last_binary:
-	                                                            (
-	                                                                binary_representation,
-	                                                                index,
-	                                                            ) = last_binary
-	                                                            long_br = len(
-	                                                                binary_representation
-	                                                            )
-	                                                            Bi = int(
-	                                                                binary_representation,
-	                                                                2,
-	                                                            )
-	                                                            Bif = format(
-	                                                                Bi, '01b'
-	                                                            )
-	                                                            Bif2 = len(Bif)
-	                                                            # print(long_br)
-	                                                            binary_to_number = int(
-	                                                                binary_representation,
-	                                                                2,
-	                                                            )
-	
-	                                                            binary_representation = format(
-	                                                                binary_to_number,
-	                                                                "01b",
-	                                                            )
-	                                                            num = (
-	                                                                binary_to_number
-	                                                            )
-	                                                            length_tree = len(
-	                                                                binary_representation
-	                                                            )
-	                                                            times += 1
-	                                                            if length_tree < 8:
-	                                                                count_number += (
-	                                                                    1
-	                                                                )
-	                                                                finish = 2
-	                                                            if (
-	                                                                length_tree < 8
-	                                                                and binary_representation_before
-	                                                                == binary_representation_before_long
-	                                                                and times_after
-	                                                                == times
-	                                                                and Bif1 == Bif2
-	                                                                and Bi == Bi3
-	                                                            ):
-	                                                                finish1 = 1
-	
-	                                                                # print("binary_representation_before_long")
-	                                                                # print(binary_representation_before_long)
-	                                                                # print("times_after")
-	                                                                # print(times_after)
-	                                                                # print("length_tree_after")
-	                                                                # print(length_tree)
-	                                                                # print("binary_to_number_number_after")
-	                                                                # print(binary_to_number_number_after
-	                                                                #print(count_number)
-	                                                                count_number = (
-	                                                                    count_number
-	                                                                    - 1
-	                                                                )
-	                                                                
-	                                                                count_number_map = {
-    1:0,
-    2:256,
-    3:512,
-    4:384,
-    5:1152,
-    6:1408,
-    7:1536,
-    8:1664,
-    9:2304,
-    10:2560,
-    11:2688,
-    12:2816,
-    13:3456,
-    14:3712,
-    15:3840,
-    16:3968,
-    'NC_1': 4608, 'NC_2': 4864, 'NC_3': 4992, 'NC_4': 5120, 'NC_5': 5760, 
-    'NC_6': 6144, 'NC_7': 6272, 'NC_8': 6400, 'NC_9': 6528, 'NC_10': 6656, 
-    'NC_11': 7168, 'NC_12': 7424, 'NC_13': 7552, 'NC_14': 7680, 'NC_15': 896
-   
+                                                # open 3 key
+                                                # binary length tree start and finish and binanary represation
 
-}
-	                                                                if find_c_v in count_number_map:
-	                                                                	count_number += count_number_map[find_c_v]
-	                                                                elif f"NC_{NC}" in count_number_map:
-	                                                                	count_number +=count_number_map[f"NC_{NC}"]	                                                                	                                                                  	                           	                                                                  	                           	                                                                  	                           	
-	
-	                                                                IFC = format(
-	                                                                    count_number,
-	                                                                    "025b",
-	                                                                )
-	                                                                TUPLE += IFC
-	
-	                                                                # print(block)
-	                                                                #print(IFC)
+                                                # print(len(num3))
+
+                                                # Continuation: another loop to perform further calculations
+
+                                                finish = 0
+                                                finish1 = 0
+                                                times = 0
+                                                count_number = 0
+                                                from qiskit import (
+                                                    QuantumCircuit,
+                                                )
+
+                                                circuit = QuantumCircuit(26)
+                                                count_number = 0
+                                                while finish1 != 1:
+
+                                                    count_number = int(
+                                                        count_number
+                                                    )
+                                                    QuantumCircuit(
+                                                        count_number
+                                                    )
+                                                    num = count_number
+                                                    # print(num)
+                                                    binary_representation_before = len(
+                                                        format(num, "01b")
+                                                    )
+                                                    finish = 0
+                                                    times = 0
+                                                    while finish != 2:
+                                                        if num < 0:
+                                                            print(
+                                                                "Please enter a non-negative integer."
+                                                            )
+                                                        else:
+                                                            max_length = len(
+                                                                format(
+                                                                    num, "b"
+                                                                )
+                                                            )
+                                                            binary_numbers = []
+                                                            for (
+                                                                length
+                                                            ) in range(
+                                                                1,
+                                                                max_length + 1,
+                                                            ):
+                                                                for i in range(
+                                                                    2**length
+                                                                ):
+                                                                    binary_numbers.append(
+                                                                        format(
+                                                                            i,
+                                                                            "0"
+                                                                            + str(
+                                                                                length
+                                                                            )
+                                                                            + "b",
+                                                                        )
+                                                                    )
+                                                            last_binary = None
+                                                            for (
+                                                                index,
+                                                                binary,
+                                                            ) in enumerate(
+                                                                binary_numbers
+                                                            ):
+                                                                if index > num:
+                                                                    break
+                                                                last_binary = (
+                                                                    binary,
+                                                                    index,
+                                                                )
+                                                            if last_binary:
+                                                                (
+                                                                    binary_representation,
+                                                                    index,
+                                                                ) = last_binary
+                                                                long_br = len(
+                                                                    binary_representation
+                                                                )
+                                                                Bi = int(
+                                                                    binary_representation,
+                                                                    2,
+                                                                )
+                                                                Bif = format(
+                                                                    Bi, "01b"
+                                                                )
+                                                                Bif2 = len(Bif)
+                                                                # print(long_br)
+                                                                binary_to_number = int(
+                                                                    binary_representation,
+                                                                    2,
+                                                                )
+
+                                                                binary_representation = format(
+                                                                    binary_to_number,
+                                                                    "01b",
+                                                                )
+                                                                num = binary_to_number
+                                                                length_tree = len(
+                                                                    binary_representation
+                                                                )
+                                                                times += 1
+                                                                if (
+                                                                    length_tree
+                                                                    < 8
+                                                                ):
+                                                                    count_number += (
+                                                                        1
+                                                                    )
+                                                                    finish = 2
+                                                                if (
+                                                                    length_tree
+                                                                    < 8
+                                                                    and binary_representation_before
+                                                                    == binary_representation_before_long
+                                                                    and times_after
+                                                                    == times
+                                                                    and Bif1
+                                                                    == Bif2
+                                                                    and Bi
+                                                                    == Bi3
+                                                                ):
+                                                                    finish1 = 1
+
+                                                                    # print("binary_representation_before_long")
+                                                                    # print(binary_representation_before_long)
+                                                                    # print("times_after")
+                                                                    # print(times_after)
+                                                                    # print("length_tree_after")
+                                                                    # print(length_tree)
+                                                                    # print("binary_to_number_number_after")
+                                                                    # print(binary_to_number_number_after
+                                                                    # print(count_number)
+                                                                    count_number = (
+                                                                        count_number
+                                                                        - 1
+                                                                    )
+
+                                                                    count_number_map = {
+                                                                        1: 0,
+                                                                        2: 256,
+                                                                        3: 512,
+                                                                        4: 384,
+                                                                        5: 1152,
+                                                                        6: 1408,
+                                                                        7: 1536,
+                                                                        8: 1664,
+                                                                        9: 2304,
+                                                                        10: 2560,
+                                                                        11: 2688,
+                                                                        12: 2816,
+                                                                        13: 3456,
+                                                                        14: 3712,
+                                                                        15: 3840,
+                                                                        16: 3968,
+                                                                        "NC_1": 4608,
+                                                                        "NC_2": 4864,
+                                                                        "NC_3": 4992,
+                                                                        "NC_4": 5120,
+                                                                        "NC_5": 5760,
+                                                                        "NC_6": 6144,
+                                                                        "NC_7": 6272,
+                                                                        "NC_8": 6400,
+                                                                        "NC_9": 6528,
+                                                                        "NC_10": 6656,
+                                                                        "NC_11": 7168,
+                                                                        "NC_12": 7424,
+                                                                        "NC_13": 7552,
+                                                                        "NC_14": 7680,
+                                                                        "NC_15": 896,
+                                                                    }
+                                                                    if (
+                                                                        find_c_v
+                                                                        in count_number_map
+                                                                    ):
+                                                                        count_number += count_number_map[
+                                                                            find_c_v
+                                                                        ]
+                                                                    elif (
+                                                                        f"NC_{NC}"
+                                                                        in count_number_map
+                                                                    ):
+                                                                        count_number += count_number_map[
+                                                                            f"NC_{NC}"
+                                                                        ]
+
+                                                                    IFC = format(
+                                                                        count_number,
+                                                                        "025b",
+                                                                    )
+                                                                    TUPLE += (
+                                                                        IFC
+                                                                    )
+
+                                                                    # print(block)
+                                                                    # print(IFC)
 
                                     TUPLE1 = TUPLE
                                     INFO = TUPLE
@@ -1161,7 +1236,7 @@ class compression:
                                     with open(name2, "wb") as f2:
                                         f2.write(width_bits3)
                                     elapsed_time = time() - start_time
-                                    
+
                                     print("checker seccefully")
                                     return str(elapsed_time)
 
