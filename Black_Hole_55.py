@@ -368,12 +368,12 @@ class compression:
                                             times = 0
                                             count_number = 0
                                             
-                                            #from qiskit import QuantumCircuit
-                                            #circuit = QuantumCircuit(26)
+                                            from qiskit import QuantumCircuit
+                                            circuit = QuantumCircuit(26)
                                             count_number = 0
                                             while finish1 != 1:
                                                 count_number=int(count_number)
-                                                #QuantumCircuit(count_number)
+                                                QuantumCircuit(count_number)
                                                 num = count_number
                                                 #print(count_number)
 
@@ -970,13 +970,13 @@ class compression:
 	                                            finish1 = 0
 	                                            times = 0
 	                                            count_number = 0
-	                                            #from qiskit import QuantumCircuit
-	                                            #circuit = QuantumCircuit(26)
+	                                            from qiskit import QuantumCircuit
+	                                            circuit = QuantumCircuit(26)
 	                                            count_number = 0
 	                                            while finish1 != 1:
                                                         	                                                
 	                                                count_number=int(count_number)
-	                                                #QuantumCircuit(count_number)
+	                                                QuantumCircuit(count_number)
 	                                                num = count_number
 	                                                #print(num)
 	                                                binary_representation_before = (
