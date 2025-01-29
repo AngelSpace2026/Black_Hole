@@ -1,5 +1,6 @@
 # Black_Hole-1-45
 constant Jurijus Pacalovas 
+
 constants = [
     0,      # Baseline
     256,    # 2^8
