@@ -1014,20 +1014,20 @@ class compression:
                                                 finish1 = 0
                                                 times = 0
                                                 count_number = 0
-                                                from qiskit import (
-                                                    QuantumCircuit,
-                                                )
+                                                #from qiskit import (
+                                                    #QuantumCircuit,
+                                                #)
 
-                                                circuit = QuantumCircuit(26)
+                                                #circuit = QuantumCircuit(26)
                                                 count_number = 0
                                                 while finish1 != 1:
 
                                                     count_number = int(
                                                         count_number
                                                     )
-                                                    QuantumCircuit(
-                                                        count_number
-                                                    )
+                                                    #QuantumCircuit(
+                                                        #count_number
+                                                    #)
                                                     num = count_number
                                                     # print(num)
                                                     binary_representation_before = len(
@@ -1235,9 +1235,16 @@ class compression:
                                     start_time = time()
                                     with open(name2, "wb") as f2:
                                         f2.write(width_bits3)
+                                        
+                                    
+                                    x2 = time()
+
+                                    x3 = x2 - x
                                     elapsed_time = time() - start_time
+                                    print(x3)
 
                                     print("checker seccefully")
+                                    print("Speed:")
                                     return str(elapsed_time)
 
 
