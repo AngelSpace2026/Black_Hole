@@ -1,5 +1,5 @@
 # Black_Hole-1-45
-constant Jurijus Pacalovas 
+#constant Jurijus Pacalovas 
 
 constants = [
     0,      # Baseline
