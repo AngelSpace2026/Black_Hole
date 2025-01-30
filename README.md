@@ -2,52 +2,42 @@
 #constant Jurijus Pacalovas 
 
 count_number_map = {
-    # Baseline and Initial Values
-    1: 0,       # Baseline
-    2: 256,     # (2^8)
-    3: 384,     # (6 * 64)
-    4: 512,     # (2^9)
-    5: 896,     # Intermediate value
+    # Keys for numbers from constants_map, sequentially ordered
+    1: 0,         # Baseline
+    2: 256,       # (2^8)
+    3: 384,       # (6 × 64)
+    4: 512,       # (2^9)
+    5: 896,       # Intermediate value
+    6: 1152,      # (9 × 128)
+    7: 1408,      # (11 × 128)
+    8: 1536,      # (12 × 128)
+    9: 1664,      # (13 × 128)
+    10: 1792,     # Intermediate value
+    11: 2304,     # (18 × 128)
+    12: 2560,     # (20 × 128)
+    13: 2688,     # (21 × 128)
+    14: 2816,     # (22 × 128)
+    15: 2944,     # Intermediate value
+    16: 3456,     # Intermediate value
 
-    # First Block Progression
-    6: 1152,    # (9 × 128)
-    7: 1408,    # (11 × 128)
-    8: 1536,    # (12 × 128)
-    9: 1664,    # (13 × 128)
-    10: 1792,   # Intermediate value
-
-    # Second Block Progression
-    11: 2304,   # (18 × 128)
-    12: 2560,   # (20 × 128)
-    13: 2688,   # (21 × 128)
-    14: 2816,   # (22 × 128)
-    15: 2944,   # Intermediate value
-
-    # Third Block Progression
-    16: 3456,   # (27 × 128)
-
-    # NC Labels for Remaining Numbers
-    "NC_1": 3712,   # (29 × 128)
-    "NC_2": 3840,   # (30 × 128)
-    "NC_3": 3968,   # (31 × 128)
-    "NC_4": 4096,   # Power of Two (2^12)
-
-    "NC_5": 4608,   # (36 × 128)
-    "NC_6": 4864,   # (38 × 128)
-    "NC_7": 4992,   # (39 × 128)
-    "NC_8": 5120,   # (40 × 128)
-
-    "NC_9": 5760,   # (45 × 128)
-
-    "NC_10": 6144,   # (48 × 128)
-    "NC_11": 6272,   # (49 × 128)
-    "NC_12": 6400,   # (50 × 128)
-    "NC_13": 6528,   # (51 × 128)
-    "NC_14": 6656,   # (52 × 128)
-
-    "NC_15": 7168,   # (56 × 128)
-
+    # Keys NC_1 to NC_15 for remaining numbers in constants_map
+    "NC_1":   3712,   # Intermediate value (29 × 128)
+    "NC_2":   3840,   # Intermediate value (30 × 128)
+    "NC_3":   3968,   # Intermediate value (31 × 128)
+    "NC_4":   4096,   # Power of Two (2^12)
+    "NC_5":   4608,   # (36 × 128)
+    "NC_6":   4864,   # (38 × 128)
+    "NC_7":   4992,   # (39 × 128)
+    "NC_8":   5120,   # (40 × 128)
+    "NC_9":   5760,   # (45 × 128)
+    "NC_10":   6144,   # (48 × 128)
+    "NC_11":   6272,   # (49 × 128)
+    "NC_12":   6400,   # (50 × 128)
+    "NC_13":   6528,   # (51 × 128)
+    "NC_14":   6656,   # (52 × 128),
+    "NC_15":  7168,
 }
+
 
 
 
