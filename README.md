@@ -2,23 +2,39 @@
 #constant Jurijus Pacalovas 
 
 count_number_map = {
-    # Keys for numbers from constants_map, sequentially ordered
-    1: 0,         # Baseline
-    2: 256,       # (2^8)
-    3: 384,       # (6 × 64)
-    4: 512,       # (2^9)
-    5: 896,       # Intermediate value
-    6: 1152,      # (9 × 128)
-    7: 1408,      # (11 × 128)
-    8: 1536,      # (12 × 128)
-    9: 1664,      # (13 × 128)
-    10: 1792,     # Intermediate value
-    11: 2304,     # (18 × 128)
-    12: 2560,     # (20 × 128)
-    13: 2688,     # (21 × 128)
-    14: 2816,     # (22 × 128)
-    15: 2944,     # Intermediate value
-    16: 3456,     # Intermediate value
+    1: 0,        # Baseline
+    2: 256,      # 2^8
+    3: 348,      # Custom value
+    4: 896,      # Intermediate value
+    5: 1152,     # 9 × 128
+    6: 1664,     # 13 × 128
+    7: 1920,     
+    8: 2432,     
+    9: 2688,     
+    10: 3200,    
+    11: 3456,    
+    12: 3968,    
+    13: 4224,    
+    14: 4736,    
+    15: 4992,    
+    16: 5504,    
+
+    "NC_1": 5760,    
+    "NC_2": 6272,    
+    "NC_3": 6528,    
+    "NC_4": 7040,    
+    "NC_5": 7296,    
+    "NC_6": 7808,    
+    "NC_7": 8064,    
+    "NC_8": 8576,    
+    "NC_9": 8832,    
+    "NC_10": 9344,    
+    "NC_11": 9600,    
+    "NC_12": 10112,   
+    "NC_13": 10368,   
+    "NC_14": 10880,   
+    "NC_15": 11136,   
+}
 
     # Keys NC_1 to NC_15 for remaining numbers in constants_map
     "NC_1":   3712,   # Intermediate value (29 × 128)
