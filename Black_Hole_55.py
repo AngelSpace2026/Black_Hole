@@ -558,39 +558,38 @@ class compression:
                                                                 # Constants and their respective five-bit binary representations
                                                                 # Constants and their respective five-bit binary representations
                                                                 constants_map = {
-                                                                    0: "00000",  # Baseline
-                                                                    256: "00001",  # 2^8
-                                                                    384: "00010",  # 6 * 64
-                                                                    512: "00011",  # 2^9
-                                                                    896: "00100",  # Intermediate value
-                                                                    1152: "00101",  # 9 * 128
-                                                                    1408: "00110",  # 11 * 128
-                                                                    1536: "00111",  # 12 * 128
-                                                                    1664: "01000",  # 13 * 128
-                                                                    1792: "01001",  # Intermediate value
-                                                                    2304: "01010",  # 18 * 128
-                                                                    2560: "01011",  # 20 * 128
-                                                                    2688: "01100",  # Intermediate value (21 * 128)
-                                                                    2816: "01101",  # Intermediate value (22 * 128)
-                                                                    2944: "01110",  # Intermediate value (23 * 128)
-                                                                    3456: "01111",  # Intermediate value (27 * 128)
-                                                                    3712: "10000",  # Intermediate value (29 * 128)
-                                                                    3840: "10001",  # Intermediate value (30 * 128)
-                                                                    3968: "10010",  # Intermediate value (31 * 128)
-                                                                    4096: "10011",  # Power of Two (2^12)
-                                                                    4608: "10100",  # (36 × 128)
-                                                                    4864: "10101",  # (38 × 128)
-                                                                    4992: "10110",  # (39 × 128)
-                                                                    5120: "10111",  # (40 × 128)
-                                                                    5760: "11000",  # (45 × 128)
-                                                                    6144: "11001",  # (48 × 128)
-                                                                    6272: "11010",  # (49 × 128)
-                                                                    6400: "11011",  # (50 × 128)
-                                                                    6528: "11100",  # (51 × 128)
-                                                                    6656: "11101",  # (52 × 128)
-                                                                    7168: "11110",  # (56 × 128)
-                                                                }
-
+    0: "00000",  # Baseline
+    256: "00001",  # 2^8
+    348: "00010",  # New value from sequence (3)
+    896: "00011",  # New value from sequence (4)
+    1152: "00100",  # New value from sequence (5)
+    1664: "00101",  # New value from sequence (6)
+    1920: "00110",  # New value from sequence (7)
+    2432: "00111",  # New value from sequence (8)
+    2688: "01000",  # New value from sequence (9)
+    3200: "01001",  # New value from sequence (10)
+    3456: "01010",  # New value from sequence (11)
+    3968: "01011",  # New value from sequence (12)
+    4224: "01100",  # New value from sequence (13)
+    4736: "01101",  # New value from sequence (14)
+    4992: "01110",  # New value from sequence (15)
+    5504: "01111",  # New value from sequence (16)
+    5760: "10000",  # New value from sequence (17)
+    6272: "10001",  # New value from sequence (18)
+    6528: "10010",  # New value from sequence (19)
+    7040: "10011",  # New value from sequence (20)
+    7296: "10100",  # New value from sequence (21)
+    7808: "10101",  # New value from sequence (22)
+    8064: "10110",  # New value from sequence (23)
+    8576: "10111",  # New value from sequence (24)
+    8832: "11000",  # New value from sequence (25)
+    9344: "11001",  # New value from sequence (26)
+    9600: "11010",  # New value from sequence (27)
+    10112: "11011",  # New value from sequence (28)
+    10368: "11100",  # New value from sequence (29)
+    10880: "11101",  # New value from sequence (30)
+    11136: "11110",  # New value from sequence (31)
+}
                                                                 number_from_map = (
                                                                     num_c
                                                                     - count_number
@@ -1146,40 +1145,39 @@ class compression:
                                                                         - 1
                                                                     )
                                                                     count_number_map = {
-                                                                        # Keys for numbers from constants_map, sequentially ordered
-                                                                        1: 0,  # Baseline
-                                                                        2: 256,  # (2^8)
-                                                                        3: 384,  # (6 × 64)
-                                                                        4: 512,  # (2^9)
-                                                                        5: 896,  # Intermediate value
-                                                                        6: 1152,  # (9 × 128)
-                                                                        7: 1408,  # (11 × 128)
-                                                                        8: 1536,  # (12 × 128)
-                                                                        9: 1664,  # (13 × 128)
-                                                                        10: 1792,  # Intermediate value
-                                                                        11: 2304,  # (18 × 128)
-                                                                        12: 2560,  # (20 × 128)
-                                                                        13: 2688,  # (21 × 128)
-                                                                        14: 2816,  # (22 × 128)
-                                                                        15: 2944,  # Intermediate value
-                                                                        16: 3456,  # Intermediate value
-                                                                        # Keys NC_1 to NC_15 for remaining numbers in constants_map
-                                                                        "NC_1": 3712,  # Intermediate value (29 × 128)
-                                                                        "NC_2": 3840,  # Intermediate value (30 × 128)
-                                                                        "NC_3": 3968,  # Intermediate value (31 × 128)
-                                                                        "NC_4": 4096,  # Power of Two (2^12)
-                                                                        "NC_5": 4608,  # (36 × 128)
-                                                                        "NC_6": 4864,  # (38 × 128)
-                                                                        "NC_7": 4992,  # (39 × 128)
-                                                                        "NC_8": 5120,  # (40 × 128)
-                                                                        "NC_9": 5760,  # (45 × 128)
-                                                                        "NC_10": 6144,  # (48 × 128)
-                                                                        "NC_11": 6272,  # (49 × 128)
-                                                                        "NC_12": 6400,  # (50 × 128)
-                                                                        "NC_13": 6528,  # (51 × 128)
-                                                                        "NC_14": 6656,  # (52 × 128),
-                                                                        "NC_15": 7168,
-                                                                    }
+    1: 0,        # Baseline
+    2: 256,      # 2^8
+    3: 348,      # Custom value
+    4: 896,      # Intermediate value
+    5: 1152,     # 9 × 128
+    6: 1664,     # 13 × 128
+    7: 1920,     
+    8: 2432,     
+    9: 2688,     
+    10: 3200,    
+    11: 3456,    
+    12: 3968,    
+    13: 4224,    
+    14: 4736,    
+    15: 4992,    
+    16: 5504,    
+
+    "NC_1": 5760,    
+    "NC_2": 6272,    
+    "NC_3": 6528,    
+    "NC_4": 7040,    
+    "NC_5": 7296,    
+    "NC_6": 7808,    
+    "NC_7": 8064,    
+    "NC_8": 8576,    
+    "NC_9": 8832,    
+    "NC_10": 9344,    
+    "NC_11": 9600,    
+    "NC_12": 10112,   
+    "NC_13": 10368,   
+    "NC_14": 10880,   
+    "NC_15": 11136,   
+}
 
                                                                     if (
                                                                         find_c_v
