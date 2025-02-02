@@ -745,7 +745,7 @@ class compression:
                                             name=name+".bin"
                                             if i == 2:
                                             	import paq
-                                            	width_bits3 = paq.decompress(width_bits3)
+                                            	width_bits3 = paq.compress(width_bits3)
 
                                    
 

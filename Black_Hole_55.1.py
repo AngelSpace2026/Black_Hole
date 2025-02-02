@@ -769,7 +769,7 @@ class compression:
 
                                         name1 = name + ".b"
                                         import paq
-                                        jl = paq.decompress(jl)
+                                        jl = paq.compress(jl)
 
                                         with open(name1, "wb") as f2:
 
