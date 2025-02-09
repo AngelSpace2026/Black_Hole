@@ -1,6 +1,14 @@
 # Black_Hole-1-45
 #constant Jurijus Pacalovas 
 
+pip install cython
+pip install paq
+pip install password
+1 compress
+2 password if you want
+2 password if you want
+1 extract
+
 count_number_map = {
     1: 0,        # Baseline
     2: 256,      # 2^8
