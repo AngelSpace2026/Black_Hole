@@ -317,8 +317,8 @@ class password_class:
                              
                                 jl=binascii.unhexlify(qqwslenf % n)
                                 
-                                import paq
-                                jl= paq.compress(jl)
+                                import zlib
+                                jl= zlib.compress(jl)
                                 
                                 
                                     
@@ -425,8 +425,8 @@ class password_class:
                        # Read the whole file at once
                         
                         data = binary_file.read()
-                        import paq
-                        data= paq.decompress(data)
+                        import zlib
+                        data= zlib.decompress(data)
 
                         
 
