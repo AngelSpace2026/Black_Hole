@@ -1,6 +1,6 @@
 import os
-pm == input("encrypt/decrypt")
-if pm="encrypt":
+pm = input("encrypt/decrypt")
+if pm=="encrypt":
     method = input("Method compress 1,2,3,4: ")
     if method=="1":
          os.system("python Black_Hole_m1.py")
