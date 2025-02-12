@@ -5,7 +5,9 @@ pip install cython
 
 pip install paq
 
-pip install password
+
+
+password key Jurijus Pacalovas
 
 1 compress
 
