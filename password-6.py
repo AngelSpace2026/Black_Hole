@@ -120,16 +120,4 @@ while True:
     elif choice == '0':
         break
     else:
-        print("Invalid choice.")
-
-    method = input("Method compress 1,2,3,4: ")
-    if method=="1":
-         os.system("python Black_Hole_m1e.py")
-    elif method=="2":
-        os.system("python Black_Hole_m2e.py")
-        
-    elif method=="3":
-        os.system("python Black_Hole_m3e.py")
-        
-    elif method=="4":
-        os.system("python Black_Hole_m4e.py")            
+        print("Invalid choice.")            
