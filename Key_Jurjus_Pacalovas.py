@@ -1,6 +1,7 @@
 import os
 import paq
 import hashlib
+print("Created by Jurijus Pacalovas.")
 
 def xor_encrypt_decrypt(data, key):
     """Encrypts or decrypts data using XOR with a repeating key."""
