@@ -1,6 +1,7 @@
 import os
-import paq
 import hashlib
+import getpass  # For invisible password input
+import paq  # Assuming PAQ library is installed (make sure paq is available)
 print("Created by Jurijus Pacalovas.")
 
 def xor_encrypt_decrypt(data, key):
@@ -14,7 +15,7 @@ def calculate_checksum(data):
     return hashlib.sha256(data).digest()
 
 def encrypt_and_compress(filename, key):
-    """Encrypts a file with XOR, adds a checksum, and compresses it using zlib."""
+    """Encrypts a file with XOR, adds a checksum, and compresses it using PAQ."""
     if not os.path.exists(filename):
         print(f"Error: File '{filename}' not found.")
         return
@@ -25,7 +26,7 @@ def encrypt_and_compress(filename, key):
 
         checksum = calculate_checksum(data)  # Calculate checksum before encryption
         encrypted_data = xor_encrypt_decrypt(checksum + data, key)  # Store checksum in encrypted data
-        compressed_data = paq.compress(encrypted_data)
+        compressed_data = paq.compress(encrypted_data)  # Compress using PAQ
 
         encrypted_filename = filename + ".enc"
         with open(encrypted_filename, 'wb') as f:
@@ -47,8 +48,8 @@ def decompress_and_decrypt(filename, key):
             compressed_data = f.read()
 
         try:
-            decompressed_data = paq.decompress(compressed_data)
-        except zlib.error as e:
+            decompressed_data = paq.decompress(compressed_data)  # Decompress using PAQ
+        except Exception as e:
             print(f"Decompression failed: {e}")
             return
 
@@ -72,8 +73,17 @@ def decompress_and_decrypt(filename, key):
     except Exception as e:
         print(f"Error during decryption/decompression: {e}")
 
+def invisible_input(prompt="Enter encryption key: "):
+    """Reads password input without displaying anything (fully invisible)."""
+    return getpass.getpass(prompt)  # Works on Linux, macOS, Windows
+
 if __name__ == "__main__":
-    key = input("Enter encryption key: ").strip()
+    try:
+        key = invisible_input("Enter encryption key: ")  # Invisible password entry
+    except:
+        print("\nError: Terminal does not support invisible input.")
+        key = input("Enter encryption key (visible): ")  # Fallback to visible input
+
     if not key:
         print("Error: Encryption key cannot be empty.")
         exit()
