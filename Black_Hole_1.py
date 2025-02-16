@@ -7,6 +7,7 @@ import sys
 # @Author Jurijus Pacalovas
 
 # Get the name of the current script
+print("Created by Jurijus Pacalovas.")
 
 if os.path.basename(sys.argv[0]) != 'Black_Hole_1.py':
 
