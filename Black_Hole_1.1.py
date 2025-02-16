@@ -8,6 +8,8 @@ import sys
 
 # Get the name of the current script
 
+print ("Created by Jurijus Pacalovas.")
+
 if os.path.basename(sys.argv[0]) != 'Black_Hole_1.1.py':
 
     sys.exit("This is not 'Black_Hole_1.1.py'.")
