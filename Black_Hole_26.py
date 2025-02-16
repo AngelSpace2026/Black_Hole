@@ -20,7 +20,7 @@ Make_togher=""
 
 
 
- 
+print("Created by Jurijus Pacalovas.") 
 
 print("Quantum Computer x Billion Qubits")
 
