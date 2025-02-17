@@ -1,7 +1,9 @@
 import zlib
 import os
 
-CHUNK_SIZE = 8191  # Reverse data in chunks of 8191 bytes
+print ("Created by Jurijus Pacalovas.")
+
+CHUNK_SIZE = 2**28  # Reverse data in chunks of 8191 bytes
 
 # Step 1: Reverse and save
 def reverse_and_save(input_filename, reversed_filename):
