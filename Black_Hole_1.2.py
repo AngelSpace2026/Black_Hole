@@ -1340,7 +1340,7 @@ class compression:
                                                                     )
 
                                                                 ]
-                                                                print(random_number)
+                                                                #print(random_number)
                                                                 
                                                                 if random_number==0:
                                                                     EB=EB
