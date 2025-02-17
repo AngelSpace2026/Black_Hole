@@ -1,4 +1,4 @@
-import zlib
+import paq
 import os
 
 print("Created by Jurijus Pacalovas.")
@@ -22,7 +22,7 @@ def reverse_and_save(input_filename, reversed_filename):
 def compress_reversed(reversed_filename, compressed_filename):
     try:
         with open(reversed_filename, 'rb') as infile, open(compressed_filename, 'wb') as outfile:
-            compressed_data = zlib.compress(infile.read())  # Compress entire reversed file
+            compressed_data = paq.compress(infile.read())  # Compress entire reversed file
             outfile.write(compressed_data)
 
         print(f"✅ Reversed file '{reversed_filename}' compressed into '{compressed_filename}'.")
@@ -38,8 +38,8 @@ def decompress_and_restore(compressed_filename, restored_filename):
             compressed_data = infile.read()
         
         try:
-            decompressed_data = zlib.decompress(compressed_data)  # Try decompression
-        except zlib.error as e:
+            decompressed_data = paq.decompress(compressed_data)  # Try decompression
+        except paq.error as e:
             print(f"❌ Error: The file '{compressed_filename}' is not a valid zlib-compressed file. ({e})")
             return
         
