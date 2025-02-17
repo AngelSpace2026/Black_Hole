@@ -1,9 +1,9 @@
 import zlib
 import os
 
-print ("Created by Jurijus Pacalovas.")
+print("Created by Jurijus Pacalovas.")
 
-CHUNK_SIZE = 2**28  # Reverse data in chunks of 8191 bytes
+CHUNK_SIZE = 2**28  # Reverse data in chunks of 268,435,456 bytes (256 MB)
 
 # Step 1: Reverse and save
 def reverse_and_save(input_filename, reversed_filename):
@@ -43,7 +43,7 @@ def decompress_and_restore(compressed_filename, restored_filename):
             print(f"❌ Error: The file '{compressed_filename}' is not a valid zlib-compressed file. ({e})")
             return
         
-        # Reverse again in 8191-byte chunks to restore the original order
+        # Reverse again in 268,435,456-byte chunks to restore the original order
         restored_data = b"".join([decompressed_data[i:i+CHUNK_SIZE][::-1] 
                                   for i in range(0, len(decompressed_data), CHUNK_SIZE)])
         
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     input_file = input("Enter input file name: ").strip()
 
     if mode == "reverse-compress":
-        reversed_file = input_file + ".b"  # Output file for reversed data
+        reversed_file = input_file + ".rev"  # Output file for reversed data
         compressed_file = input_file + ".b"  # Output file for compressed data
 
         reverse_and_save(input_file, reversed_file)  # Step 1: Reverse and Save
@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
     elif mode == "extract":
         compressed_file = input_file + ".b"  # Input file for compressed data
-        restored_file = input_file[:-2]  # Output file for restored data
+        restored_file = input_file[:-2]  # Output file for restored data (removes .zip extension)
 
         decompress_and_restore(compressed_file, restored_file)  # Step 3: Decompress and Restore
 
