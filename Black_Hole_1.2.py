@@ -1,46 +1,76 @@
-import paq
+import zlib
+import os
 
-CHUNK_SIZE = 8191  # Set the chunk size to 8191 bytes
+CHUNK_SIZE = 8191  # Reverse data in chunks of 8191 bytes
 
-def reverse_and_compress(input_filename, output_filename):
+# Step 1: Reverse and save
+def reverse_and_save(input_filename, reversed_filename):
     try:
-        with open(input_filename, 'rb') as infile, open(output_filename, 'wb') as outfile:
+        with open(input_filename, 'rb') as infile, open(reversed_filename, 'wb') as outfile:
             while chunk := infile.read(CHUNK_SIZE):
-                reversed_chunk = chunk[::-1]  # Reverse the 8191-byte chunk
-                compressed_chunk = paq.compress(reversed_chunk)
-                outfile.write(compressed_chunk)
-        
-        print(f"File '{input_filename}' compressed with reversed 8191-byte chunks into '{output_filename}'.")
+                outfile.write(chunk[::-1])  # Reverse the chunk before writing
 
+        print(f"✅ File '{input_filename}' reversed and saved as '{reversed_filename}'.")
     except FileNotFoundError:
-        print(f"Error: Input file '{input_filename}' not found.")
+        print(f"❌ Error: Input file '{input_filename}' not found.")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"❌ An error occurred: {e}")
 
-def decompress_and_restore(input_filename, output_filename):
+# Step 2: Compress the reversed file
+def compress_reversed(reversed_filename, compressed_filename):
     try:
-        with open(input_filename, 'rb') as infile, open(output_filename, 'wb') as outfile:
-            while compressed_chunk := infile.read():
-                decompressed_chunk = paq.decompress(compressed_chunk)
-                restored_chunk = decompressed_chunk[::-1]  # Reverse again to restore original
-                outfile.write(restored_chunk)
-        
-        print(f"File '{input_filename}' decompressed and restored into '{output_filename}'.")
+        with open(reversed_filename, 'rb') as infile, open(compressed_filename, 'wb') as outfile:
+            compressed_data = zlib.compress(infile.read())  # Compress entire reversed file
+            outfile.write(compressed_data)
 
+        print(f"✅ Reversed file '{reversed_filename}' compressed into '{compressed_filename}'.")
     except FileNotFoundError:
-        print(f"Error: Input file '{input_filename}' not found.")
+        print(f"❌ Error: Input file '{reversed_filename}' not found.")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"❌ An error occurred: {e}")
+
+# Step 3: Decompress and restore the original file
+def decompress_and_restore(compressed_filename, restored_filename):
+    try:
+        with open(compressed_filename, 'rb') as infile:
+            compressed_data = infile.read()
+        
+        try:
+            decompressed_data = zlib.decompress(compressed_data)  # Try decompression
+        except zlib.error as e:
+            print(f"❌ Error: The file '{compressed_filename}' is not a valid zlib-compressed file. ({e})")
+            return
+        
+        # Reverse again in 8191-byte chunks to restore the original order
+        restored_data = b"".join([decompressed_data[i:i+CHUNK_SIZE][::-1] 
+                                  for i in range(0, len(decompressed_data), CHUNK_SIZE)])
+        
+        with open(restored_filename, 'wb') as outfile:
+            outfile.write(restored_data)
+
+        print(f"✅ Compressed file '{compressed_filename}' decompressed and restored as '{restored_filename}'.")
+    except FileNotFoundError:
+        print(f"❌ Error: Input file '{compressed_filename}' not found.")
+    except Exception as e:
+        print(f"❌ An error occurred: {e}")
 
 # Interactive user input
 if __name__ == "__main__":
-    mode = input("Enter mode (compress/extract): ").strip().lower()
+    mode = input("Enter mode (reverse-compress/extract): ").strip().lower()
     input_file = input("Enter input file name: ").strip()
-    output_file = input("Enter output file name: ").strip()
 
-    if mode == "compress":
-        reverse_and_compress(input_file, output_file)
+    if mode == "reverse-compress":
+        reversed_file = input_file + ".b"  # Output file for reversed data
+        compressed_file = input_file + ".b"  # Output file for compressed data
+
+        reverse_and_save(input_file, reversed_file)  # Step 1: Reverse and Save
+        compress_reversed(reversed_file, compressed_file)  # Step 2: Compress Reversed File
+
     elif mode == "extract":
-        decompress_and_restore(input_file, output_file)
+        compressed_file = input_file + ".b"  # Input file for compressed data
+        restored_file = input_file[:-2]  # Output file for restored data
+
+        decompress_and_restore(compressed_file, restored_file)  # Step 3: Decompress and Restore
+
     else:
-        print("Invalid mode selected.")
+        print("❌ Invalid mode selected.")
