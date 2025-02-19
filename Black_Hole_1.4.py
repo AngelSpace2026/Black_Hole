@@ -2,6 +2,7 @@ import os
 import zstandard as zstd
 from pathlib import Path
 import math
+from qiskit import QuantumCircuit
 
 # Function to reverse data in multiple ways based on chunk size
 def reverse_and_save(input_filename, reversed_filename, chunk_size):
@@ -49,7 +50,7 @@ def decompress_and_restore(compressed_filename, restored_filename, chunk_size):
 # Function to find the best chunk size for compression
 def find_best_chunk_size(input_filename):
     file_size = os.path.getsize(input_filename)
-    best_chunk_size = 1  # Start with minimum chunk size
+    best_chunk_size = 1
     best_compression_ratio = float('inf')
     best_compressed_file = None
 
@@ -63,7 +64,7 @@ def find_best_chunk_size(input_filename):
         compressed_size = compress_reversed(reversed_file, compressed_file)
         
         if compressed_size is not None:
-            compression_ratio = compressed_size / file_size  # Lower is better
+            compression_ratio = compressed_size / file_size
 
             if compression_ratio < best_compression_ratio:
                 best_compression_ratio = compression_ratio
@@ -76,6 +77,20 @@ def find_best_chunk_size(input_filename):
     print(f"✅ Best chunk size: {best_chunk_size} bytes (Compression Ratio: {best_compression_ratio:.4f})")
     return best_chunk_size, best_compressed_file
 
+# Function to create a quantum circuit based on file size
+def quantum_compression_simulation(file_size):
+    num_qubits = math.ceil(math.log2(file_size)) + 1  # X+1 qubits
+    qc = QuantumCircuit(num_qubits)
+
+    # Apply Hadamard gate to create superposition
+    qc.h(range(num_qubits))
+
+    # Apply CNOT for entanglement
+    for qubit in range(num_qubits - 1):
+        qc.cx(qubit, qubit + 1)
+
+    print(f"⚛️ Quantum Circuit Created with {num_qubits} qubits (for simulation).")
+
 # Function to process compression and leave only three files
 def process_compression(input_filename):
     file_size = os.path.getsize(input_filename)
@@ -86,8 +101,8 @@ def process_compression(input_filename):
     # File paths
     reversed_file = input_filename + ".rev"
     compressed_file = f"compress.{Path(input_filename).name}.b"
-    restored_file = f"extract.{Path(input_filename).name}"  # Extracted file format
-    metadata_file = f"compress.{Path(input_filename).name}.meta"  # Metadata file to store chunk size
+    restored_file = f"extract.{Path(input_filename).name}"  
+    metadata_file = f"compress.{Path(input_filename).name}.meta"  
 
     # Process with the best chunk size
     reverse_and_save(input_filename, reversed_file, best_chunk_size)
@@ -99,6 +114,9 @@ def process_compression(input_filename):
 
     # Decompress and restore to verify correctness
     decompress_and_restore(compressed_file, restored_file, best_chunk_size)
+
+    # Quantum compression simulation
+    quantum_compression_simulation(file_size)
 
     # Check file integrity
     original_size = os.path.getsize(input_filename)
