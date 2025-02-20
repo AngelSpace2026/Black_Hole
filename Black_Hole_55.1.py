@@ -6,14 +6,15 @@ import os.path
 import sys
 
 # @Author Jurijus Pacalovas
-# Get the name of the current script
-
-if os.path.basename(sys.argv[0]) != "Black_Hole_55.1py":
+# Check if the script being executed is 'Black_Hole_55.1.py'
+if os.path.basename(sys.argv[0]) != "Black_Hole_55.1.py":
     sys.exit("This is not 'Black_Hole_55.1.py'.")
 
+# Display a message indicating that the correct script is running
 print("The script 'Black_Hole_55.1.py' is currently running.")
-print("Must be 8-16 GBs of Ram, 64 bits and Quantum Computer 26 Qubits. ")
 
+# Display hardware requirements
+print("Must have 8-16 GB of RAM, a 64-bit architecture, and a Quantum Computer with 26 Qubits.")
 
 class compression:
     def cryptograpy_compression4(self):
@@ -94,6 +95,7 @@ class compression:
                 data = binary_file.read()
                 if i == 2:
                     import paq
+
                     data = paq.decompress(data)
                 s = str(data)
 
@@ -561,38 +563,38 @@ class compression:
                                                                 # Constants and their respective five-bit binary representations
                                                                 # Constants and their respective five-bit binary representations
                                                                 constants_map = {
-    0: "00000",  # Baseline
-    256: "00001",  # 2^8
-    348: "00010",  # New value from sequence (3)
-    896: "00011",  # New value from sequence (4)
-    1152: "00100",  # New value from sequence (5)
-    1664: "00101",  # New value from sequence (6)
-    1920: "00110",  # New value from sequence (7)
-    2432: "00111",  # New value from sequence (8)
-    2688: "01000",  # New value from sequence (9)
-    3200: "01001",  # New value from sequence (10)
-    3456: "01010",  # New value from sequence (11)
-    3968: "01011",  # New value from sequence (12)
-    4224: "01100",  # New value from sequence (13)
-    4736: "01101",  # New value from sequence (14)
-    4992: "01110",  # New value from sequence (15)
-    5504: "01111",  # New value from sequence (16)
-    5760: "10000",  # New value from sequence (17)
-    6272: "10001",  # New value from sequence (18)
-    6528: "10010",  # New value from sequence (19)
-    7040: "10011",  # New value from sequence (20)
-    7296: "10100",  # New value from sequence (21)
-    7808: "10101",  # New value from sequence (22)
-    8064: "10110",  # New value from sequence (23)
-    8576: "10111",  # New value from sequence (24)
-    8832: "11000",  # New value from sequence (25)
-    9344: "11001",  # New value from sequence (26)
-    9600: "11010",  # New value from sequence (27)
-    10112: "11011",  # New value from sequence (28)
-    10368: "11100",  # New value from sequence (29)
-    10880: "11101",  # New value from sequence (30)
-    11136: "11110",  # New value from sequence (31)
-}
+                                                                    0: "00000",  # Baseline
+                                                                    256: "00001",  # 2^8
+                                                                    348: "00010",  # New value from sequence (3)
+                                                                    896: "00011",  # New value from sequence (4)
+                                                                    1152: "00100",  # New value from sequence (5)
+                                                                    1664: "00101",  # New value from sequence (6)
+                                                                    1920: "00110",  # New value from sequence (7)
+                                                                    2432: "00111",  # New value from sequence (8)
+                                                                    2688: "01000",  # New value from sequence (9)
+                                                                    3200: "01001",  # New value from sequence (10)
+                                                                    3456: "01010",  # New value from sequence (11)
+                                                                    3968: "01011",  # New value from sequence (12)
+                                                                    4224: "01100",  # New value from sequence (13)
+                                                                    4736: "01101",  # New value from sequence (14)
+                                                                    4992: "01110",  # New value from sequence (15)
+                                                                    5504: "01111",  # New value from sequence (16)
+                                                                    5760: "10000",  # New value from sequence (17)
+                                                                    6272: "10001",  # New value from sequence (18)
+                                                                    6528: "10010",  # New value from sequence (19)
+                                                                    7040: "10011",  # New value from sequence (20)
+                                                                    7296: "10100",  # New value from sequence (21)
+                                                                    7808: "10101",  # New value from sequence (22)
+                                                                    8064: "10110",  # New value from sequence (23)
+                                                                    8576: "10111",  # New value from sequence (24)
+                                                                    8832: "11000",  # New value from sequence (25)
+                                                                    9344: "11001",  # New value from sequence (26)
+                                                                    9600: "11010",  # New value from sequence (27)
+                                                                    10112: "11011",  # New value from sequence (28)
+                                                                    10368: "11100",  # New value from sequence (29)
+                                                                    10880: "11101",  # New value from sequence (30)
+                                                                    11136: "11110",  # New value from sequence (31)
+                                                                }
                                                                 number_from_map = (
                                                                     num_c
                                                                     - count_number
@@ -769,6 +771,7 @@ class compression:
 
                                         name1 = name + ".b"
                                         import paq
+
                                         jl = paq.compress(jl)
 
                                         with open(name1, "wb") as f2:
@@ -1150,39 +1153,38 @@ class compression:
                                                                         - 1
                                                                     )
                                                                     count_number_map = {
-    1: 0,        # Baseline
-    2: 256,      # 2^8
-    3: 348,      # Custom value
-    4: 896,      # Intermediate value
-    5: 1152,     # 9 × 128
-    6: 1664,     # 13 × 128
-    7: 1920,     
-    8: 2432,     
-    9: 2688,     
-    10: 3200,    
-    11: 3456,    
-    12: 3968,    
-    13: 4224,    
-    14: 4736,    
-    15: 4992,    
-    16: 5504,    
-
-    "NC_1": 5760,    
-    "NC_2": 6272,    
-    "NC_3": 6528,    
-    "NC_4": 7040,    
-    "NC_5": 7296,    
-    "NC_6": 7808,    
-    "NC_7": 8064,    
-    "NC_8": 8576,    
-    "NC_9": 8832,    
-    "NC_10": 9344,    
-    "NC_11": 9600,    
-    "NC_12": 10112,   
-    "NC_13": 10368,   
-    "NC_14": 10880,   
-    "NC_15": 11136,   
-}
+                                                                        1: 0,  # Baseline
+                                                                        2: 256,  # 2^8
+                                                                        3: 348,  # Custom value
+                                                                        4: 896,  # Intermediate value
+                                                                        5: 1152,  # 9 × 128
+                                                                        6: 1664,  # 13 × 128
+                                                                        7: 1920,
+                                                                        8: 2432,
+                                                                        9: 2688,
+                                                                        10: 3200,
+                                                                        11: 3456,
+                                                                        12: 3968,
+                                                                        13: 4224,
+                                                                        14: 4736,
+                                                                        15: 4992,
+                                                                        16: 5504,
+                                                                        "NC_1": 5760,
+                                                                        "NC_2": 6272,
+                                                                        "NC_3": 6528,
+                                                                        "NC_4": 7040,
+                                                                        "NC_5": 7296,
+                                                                        "NC_6": 7808,
+                                                                        "NC_7": 8064,
+                                                                        "NC_8": 8576,
+                                                                        "NC_9": 8832,
+                                                                        "NC_10": 9344,
+                                                                        "NC_11": 9600,
+                                                                        "NC_12": 10112,
+                                                                        "NC_13": 10368,
+                                                                        "NC_14": 10880,
+                                                                        "NC_15": 11136,
+                                                                    }
 
                                                                     if (
                                                                         find_c_v
