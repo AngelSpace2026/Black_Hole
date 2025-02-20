@@ -2,10 +2,30 @@ import os
 import paq
 from pathlib import Path
 import struct
+from qiskit import QuantumCircuit
+
+# Simple Qiskit Quantum Circuit Example
+def quantum_computation_example():
+    print("\n🔮 Running a basic quantum computation using Qiskit:")
+
+    # Create a quantum circuit with 2 qubits and 2 classical bits
+    circuit = QuantumCircuit(2, 2)
+    
+    # Apply a Hadamard gate to the first qubit
+    circuit.h(0)
+    
+    # Apply a CNOT gate between the first and second qubits
+    circuit.cx(0, 1)
+    
+    # Measure both qubits
+    circuit.measure([0, 1], [0, 1])
+    
+    # Draw the quantum circuit
+    print("Quantum Circuit Diagram:")
+    print(circuit.draw())
 
 # Function to reverse data in chunks based on chunk count
 def reverse_and_save(input_filename, reversed_filename, chunk_size, num_chunks):
-    #print(f"🔄 Reversing with {num_chunks} chunks, chunk size: {chunk_size} bytes")
     with open(input_filename, 'rb') as infile, open(reversed_filename, 'wb') as outfile:
         data = infile.read()
         chunked_data = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
@@ -19,7 +39,6 @@ def reverse_and_save(input_filename, reversed_filename, chunk_size, num_chunks):
 
 # Function to compress and save metadata (chunk size + num_chunks)
 def compress_reversed(reversed_filename, compressed_filename, chunk_size, num_chunks):
-    #print(f"📦 Compressing with chunk size {chunk_size} bytes and {num_chunks} reversed chunks")
     with open(reversed_filename, 'rb') as infile:
         reversed_data = infile.read()
 
@@ -39,7 +58,6 @@ def decompress_and_restore(compressed_filename, restored_filename):
 
     # Read metadata (first 8 bytes)
     chunk_size, num_chunks = struct.unpack(">II", decompressed_data[:8])
-    #print(f"🔄 Restoring with chunk size: {chunk_size}, reversed chunks: {num_chunks}")
 
     reversed_data = decompressed_data[8:]  # Actual reversed data
 
@@ -112,13 +130,15 @@ def process_extraction(input_filename):
 def main():
     print("Created by Jurijus Pacalovas.")
     
-    mode = input("Enter mode (compress/extract): ").strip().lower()
+    mode = input("Enter mode (compress/extract/quantum): ").strip().lower()
     input_file = input("Enter input file name: ").strip()
 
     if mode == "compress":
         process_compression(input_file)
     elif mode == "extract":
         process_extraction(input_file)
+    elif mode == "quantum":
+        quantum_computation_example()
     else:
         print("❌ Invalid mode selected.")
 
