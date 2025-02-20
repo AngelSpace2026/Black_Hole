@@ -4,9 +4,9 @@ from pathlib import Path
 import struct
 from qiskit import QuantumCircuit
 
-# Simple Qiskit Quantum Circuit Example
+# Function to run a quantum computation (without Aer, transpile, or execute)
 def quantum_computation_example():
-    print("\n🔮 Running a basic quantum computation using Qiskit:")
+    print("\n🔮 Running a basic quantum computation without Aer, transpile, or execute:")
 
     # Create a quantum circuit with 2 qubits and 2 classical bits
     circuit = QuantumCircuit(2, 2)
@@ -20,9 +20,9 @@ def quantum_computation_example():
     # Measure both qubits
     circuit.measure([0, 1], [0, 1])
     
-    # Draw the quantum circuit
-    print("Quantum Circuit Diagram:")
-    print(circuit.draw())
+    # Display the quantum circuit
+    print("\nQuantum Circuit:")
+    print(circuit)
 
 # Function to reverse data in chunks based on chunk count
 def reverse_and_save(input_filename, reversed_filename, chunk_size, num_chunks):
@@ -130,17 +130,20 @@ def process_extraction(input_filename):
 def main():
     print("Created by Jurijus Pacalovas.")
     
-    mode = input("Enter mode (compress/extract/quantum): ").strip().lower()
-    input_file = input("Enter input file name: ").strip()
+    # Always perform quantum computation (without Aer, transpile, or execute)
+    quantum_computation_example()
 
-    if mode == "compress":
+    # User option for compress or extract
+    mode = input("Enter mode (1 for compress, 2 for extract): ").strip()
+
+    if mode == "1":
+        input_file = input("Enter input file name to compress: ").strip()
         process_compression(input_file)
-    elif mode == "extract":
+    elif mode == "2":
+        input_file = input("Enter input file name to extract: ").strip()
         process_extraction(input_file)
-    elif mode == "quantum":
-        quantum_computation_example()
     else:
-        print("❌ Invalid mode selected.")
+        print("❌ Invalid mode selected. Please choose 1 or 2.")
 
 if __name__ == "__main__":
     main()
