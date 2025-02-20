@@ -6,15 +6,14 @@ import os.path
 import sys
 
 # @Author Jurijus Pacalovas
-# Check if the script being executed is 'Black_Hole_55.1.py'
+# Get the name of the current script
+
 if os.path.basename(sys.argv[0]) != "Black_Hole_55.1.py":
     sys.exit("This is not 'Black_Hole_55.1.py'.")
 
-# Display a message indicating that the correct script is running
 print("The script 'Black_Hole_55.1.py' is currently running.")
+print("Must be 8-16 GBs of Ram, 64 bits and Quantum Computer 26 Qubits. ")
 
-# Display hardware requirements
-print("Must have 8-16 GB of RAM, a 64-bit architecture, and a Quantum Computer with 26 Qubits.")
 
 class compression:
     def cryptograpy_compression4(self):
@@ -93,10 +92,12 @@ class compression:
             with open(name, "rb") as binary_file:
 
                 data = binary_file.read()
+                
                 if i == 2:
                     import paq
 
                     data = paq.decompress(data)
+                
                 s = str(data)
 
                 long_11 = len(data)
@@ -768,11 +769,12 @@ class compression:
                                         File_information5_2 = Clear
 
                                         jl = width_bits3
-
-                                        name1 = name + ".b"
+                                        
                                         import paq
 
                                         jl = paq.compress(jl)
+
+                                        name1 = name + ".b"
 
                                         with open(name1, "wb") as f2:
 
