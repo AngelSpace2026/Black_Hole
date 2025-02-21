@@ -311,6 +311,9 @@ class compression:
                                     long_13=len(File_information5_2)
 
                                 long_12=len(File_information5_2)
+                                Square_Root_26_1024_1024=(26*1024*1024)
+                                Deep5=Square_Root_26_1024_1024
+                                
 
                                 if i==1:
 
@@ -319,8 +322,8 @@ class compression:
                                         print("print file is too big!")
 
                                         raise SystemExit
-                                        Square_Root_26_1024_1024=(26*1024*1024)
-                                        Deep5=Square_Root_26_1024_1024
+                                        
+                                        
 
                                 if i==1:
 
@@ -631,7 +634,7 @@ class compression:
 
                                                         Square_of_ROOT=Hole_Number_information
 
-                                                        Number_of_the_file, Hole_Number_information, Add_Numbers, Multiply, counts, Square_Root_26_1024_1024 = process_files(Number_of_the_file, Hole_Number_information, Add_Numbers, Multiply, counts,Square_Root_26_1024_1024)
+                                                        Number_of_the_file, Hole_Number_information, Add_Numbers, Multiply, counts, Square_Root_26_1024_1024 = process_files(Number_of_the_file, Hole_Number_information, Add_Numbers, Multiply, counts, Square_Root_26_1024_1024)
 
 
 
