@@ -16,7 +16,7 @@ add_bits=""
 
 Make_togher=""
 
-
+Deep5=26*1024*1024
 
 
 
