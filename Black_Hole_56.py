@@ -53,7 +53,7 @@ class compression:
 
                           
 
-                def process_files(Number_of_the_file, Hole_Number_information, Add_Numbers, Multiply, counts):
+                def process_files(Number_of_the_file, Hole_Number_information, Add_Numbers, Multiply, counts, Square_Root_26_1024_1024):
 
                         Before_X = Number_of_the_file
 
@@ -97,7 +97,7 @@ class compression:
 
                 
 
-                        return Number_of_the_file, Square_of_ROOT, Add_Numbers, Multiply, counts
+                        return Number_of_the_file, Square_of_ROOT, Add_Numbers, Multiply, counts, Square_Root_26_1024_1024
 
                 self.name = "Written: Jurijus pacalovas"
 
@@ -319,7 +319,7 @@ class compression:
                                         print("print file is too big!")
 
                                         raise SystemExit
-                                        Square_Root_26_1024_1024=(26*1024*1024)+1
+                                        Square_Root_26_1024_1024=(26*1024*1024)
                                         Deep5=Square_Root_26_1024_1024
 
                                 if i==1:
@@ -631,7 +631,7 @@ class compression:
 
                                                         Square_of_ROOT=Hole_Number_information
 
-                                                        Number_of_the_file, Hole_Number_information, Add_Numbers, Multiply, counts = process_files(Number_of_the_file, Hole_Number_information, Add_Numbers, Multiply, counts)
+                                                        Number_of_the_file, Hole_Number_information, Add_Numbers, Multiply, counts, Square_Root_26_1024_1024 = process_files(Number_of_the_file, Hole_Number_information, Add_Numbers, Multiply, counts,Square_Root_26_1024_1024)
 
 
 
@@ -1125,7 +1125,7 @@ class compression:
 
                                                                 Hole_Number_information=(2**Deep5)-1
 
-                                                        Number_of_the_file, Hole_Number_information, Add_Numbers, Multiply, counts = process_files(Number_of_the_file, Hole_Number_information, Add_Numbers, Multiply, counts)
+                                                        Number_of_the_file, Hole_Number_information, Add_Numbers, Multiply, counts, Square_Root_26_1024_1024= process_files(Number_of_the_file, Hole_Number_information, Add_Numbers, Multiply, counts,Square_Root_26_1024_1024)
 
 
 
