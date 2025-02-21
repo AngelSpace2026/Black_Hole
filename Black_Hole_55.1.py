@@ -883,7 +883,7 @@ class compression:
                                     block = 0
                                     TUPLE = ""
                                     while block < long_F:
-                                        take_c_or_l = INFO[block : block + 24]
+                                        take_c_or_l = INFO[block : block + 25]
                                         long_l = len(take_c_or_l)
                                         # print(long_l)
 
