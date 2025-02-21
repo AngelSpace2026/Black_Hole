@@ -17,6 +17,7 @@ add_bits=""
 Make_togher=""
 
 Square_Root_26_1024_1024=(26*1024*1024)+1
+Deep5=Square_Root_26_1024_1024
 
 
 print("Created by Jurijus Pacalovas.")
