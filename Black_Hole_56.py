@@ -953,7 +953,7 @@ class compression:
 
                                                     k2=0
 
-                                                    counts=-1                                                      
+                                                    counts=-1                                                    
                                                     
                                                     if University>3:
                                                         
@@ -975,11 +975,13 @@ class compression:
                                                     University=int(k2)
                                                     circuit = QuantumCircuit(Universe)
         
+                                                    QuantumCircuit(University)       
+        
                                                    
                                                     
-                                                    universe_n+=1
+                                                  
 
-                                                    University=universe_n
+                                                   
 
                                                     k1=-1
 
