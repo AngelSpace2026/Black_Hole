@@ -16,7 +16,8 @@ add_bits=""
 
 Make_togher=""
 
-Square_Root_26_1024_1024=(26*1024*1024)+1
+
+
 
 
 print("Created by Jurijus Pacalovas.")
@@ -63,10 +64,10 @@ class compression:
 
                               
 
-                        Square_Root_26_1024_1024-=1     
+                                  
 
                         if Number_of_the_file>=2**26*1024*1024:
-                           Number_of_the_file=2**Square_Root_26_1024_1024
+                           Number_of_the_file=2**26*1024*1024
                                 
                         
 
@@ -307,7 +308,7 @@ class compression:
                                     long_13=len(File_information5_2)
 
                                 long_12=len(File_information5_2)
-                                Deep5=26*1024*1024
+
                                 if i==1:
 
                                     if long_17>=(2**26)-1 and i==1:
@@ -1105,7 +1106,6 @@ class compression:
                                                         Hole_Number_information=(2**Deep5)-1
 
                                                         Square_of_ROOT=Hole_Number_information
-                                                        
 
                                                         if Deep5<=26*1024*1024:
 
