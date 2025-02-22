@@ -422,8 +422,7 @@ class compression:
                                             C11="0"+str(((8*X2)+40))+"b"
 
                                             if k2>(2**((8*X1)+40)-1):
-                                                    University=k2
-                                                    num = k2
+
                                                     universe_n+=1
 
                                                     University=universe_n
@@ -944,8 +943,7 @@ class compression:
                                             C11="0"+str(((8*X2)+40))+"b"
 
                                             if k2>(2**((8*X1)+40)-1):
-                                                    University=k2
-                                                    num = k2
+
                                                     universe_n+=1
 
                                                     University=universe_n
