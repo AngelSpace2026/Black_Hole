@@ -422,6 +422,27 @@ class compression:
                                             C11="0"+str(((8*X2)+40))+"b"
 
                                             if k2>(2**((8*X1)+40)-1):
+                                                    if University>3:
+                                                        
+                                                        
+                                                        
+        
+        
+        
+        
+                                                        Universe=highest_power_of_two_exponent(num)
+                                                    elif University<4:
+                                                        Universe=12
+                                                    
+                                                    
+                                                    #We gets around how need qubits.
+             
+        
+                                                    Universe=int(Universe)
+                                                    University=int(k2)
+                                                    circuit = QuantumCircuit(Universe)
+        
+                                                    QuantumCircuit(University)                                            
                                                     universe_n+=1
 
                                                     University=universe_n
@@ -918,6 +939,28 @@ class compression:
                                             C11="0"+str(((8*X2)+40))+"b"
 
                                             if k2>(2**((8*X1)+40)-1):
+                                                    if University>3:
+                                                        
+                                                        
+                                                        
+        
+        
+        
+        
+                                                        Universe=highest_power_of_two_exponent(num)
+                                                    elif University<4:
+                                                        Universe=12
+                                                    
+                                                    
+                                                    #We gets around how need qubits.
+             
+        
+                                                    Universe=int(Universe)
+                                                    University=int(k2)
+                                                    circuit = QuantumCircuit(Universe)
+        
+                                                   
+                                                    
                                                     universe_n+=1
 
                                                     University=universe_n
