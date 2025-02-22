@@ -410,7 +410,7 @@ class compression:
      
 
                                             Universe=int(Universe)
-                                            University=int(k2)
+                                            University=int(universe_n)
                                             circuit = QuantumCircuit(Universe)
 
                                             QuantumCircuit(University)
@@ -972,7 +972,7 @@ class compression:
              
         
                                                     Universe=int(Universe)
-                                                    University=int(k2)
+                                                    University=int(universe_n)
                                                     circuit = QuantumCircuit(Universe)
         
                                                     QuantumCircuit(University)       
