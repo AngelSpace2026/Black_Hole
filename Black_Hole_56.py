@@ -313,6 +313,7 @@ class compression:
                                 long_12=len(File_information5_2)
                                 Square_Root_26_1024_1024=(26*1024*1024)
                                 Deep5=Square_Root_26_1024_1024
+                                universe_n=1
                                 
 
                                 if i==1:
@@ -421,8 +422,9 @@ class compression:
                                             C11="0"+str(((8*X2)+40))+"b"
 
                                             if k2>(2**((8*X1)+40)-1):
+                                                    universe_n+=1
 
-                                                    University=5
+                                                    University=universe_n
 
                                                     k1=-1
 
@@ -916,8 +918,9 @@ class compression:
                                             C11="0"+str(((8*X2)+40))+"b"
 
                                             if k2>(2**((8*X1)+40)-1):
+                                                    universe_n+=1
 
-                                                    University=5
+                                                    University=universe_n
 
                                                     k1=-1
 
