@@ -1,5 +1,6 @@
 import os
 import math
+import time
 import zstandard as zstd
 from pathlib import Path
 from qiskit import QuantumCircuit
@@ -61,52 +62,36 @@ def quantum_compress(file_size):
     
     print(f"✅ Quantum Circuit with {num_qubits} qubits created.")
 
-# Function to find the best chunk size for compression
-def find_best_chunk_size(input_filename):
-    file_size = os.path.getsize(input_filename)
-    best_chunk_size = 1  # Start with minimum chunk size
-    best_compression_ratio = float('inf')
-    best_compressed_file = None
-
-    print(f"📏 Checking best chunk size from 1 to {file_size} bytes...")
-
-    for chunk_size in range(1, file_size + 1):
-        reversed_file = input_filename + ".rev"
-        compressed_file = f"{input_filename}_{chunk_size}.b"
-        
-        reverse_and_save(input_filename, reversed_file, chunk_size)
-        compressed_size = compress_reversed(reversed_file, compressed_file)
-        
-        if compressed_size is not None:
-            compression_ratio = compressed_size / file_size  # Lower is better
-
-            if compression_ratio < best_compression_ratio:
-                best_compression_ratio = compression_ratio
-                best_chunk_size = chunk_size
-                best_compressed_file = compressed_file
-        
-        os.remove(reversed_file) if os.path.exists(reversed_file) else None
-        os.remove(compressed_file) if os.path.exists(compressed_file) else None
-
-    print(f"✅ Best chunk size: {best_chunk_size} bytes (Compression Ratio: {best_compression_ratio:.4f})")
-    return best_chunk_size, best_compressed_file
-
 # Main function to process compression
 def check_extract_save_num_check_and_chunk(input_filename):
     file_size = os.path.getsize(input_filename)
-    
-    # Find the best chunk size
-    best_chunk_size, best_compressed_file = find_best_chunk_size(input_filename)
 
     # File paths
     reversed_file = input_filename + ".rev"
-    compressed_file = f"{input_filename}_{best_chunk_size}.b"  # New format
-    restored_file = f"extract.{Path(input_filename).name}"  # Extracted file format
+    compressed_file = f"{input_filename}.b"
+    restored_file = f"extract.{Path(input_filename).name}"
 
-    # Process with the best chunk size
-    reverse_and_save(input_filename, reversed_file, best_chunk_size)
+    # Start compression timer
+    start_compress = time.perf_counter_ns()
+
+    # Process compression
+    reverse_and_save(input_filename, reversed_file, file_size)
     compress_reversed(reversed_file, compressed_file)
-    decompress_and_restore(compressed_file, restored_file, best_chunk_size)
+
+    # End compression timer
+    end_compress = time.perf_counter_ns()
+    compression_time_ns = end_compress - start_compress
+    print(f"⏳ Compression time: {compression_time_ns} nanoseconds")
+
+    # Start extraction timer
+    start_extract = time.perf_counter_ns()
+
+    decompress_and_restore(compressed_file, restored_file, file_size)
+
+    # End extraction timer
+    end_extract = time.perf_counter_ns()
+    extraction_time_ns = end_extract - start_extract
+    print(f"⏳ Extraction time: {extraction_time_ns} nanoseconds")
 
     # Check file integrity
     original_size = os.path.getsize(input_filename)
@@ -120,11 +105,11 @@ def check_extract_save_num_check_and_chunk(input_filename):
     else:
         print("❌ Warning: Restored file size does not match the original.")
 
-    # Cleanup: Delete only unnecessary temporary files
+    # Cleanup temporary files
     os.remove(reversed_file) if os.path.exists(reversed_file) else None
     print(f"✅ Removed temporary file '{reversed_file}'.")
 
-    print(f"✅ Three files are left:\n  1️⃣ Original: '{input_filename}'\n  2️⃣ Best Compressed: '{compressed_file}'\n  3️⃣ Restored: '{restored_file}'")
+    print(f"✅ Three files are left:\n  1️⃣ Original: '{input_filename}'\n  2️⃣ Compressed: '{compressed_file}'\n  3️⃣ Restored: '{restored_file}'")
 
 # Main interactive function
 def main():
@@ -138,16 +123,18 @@ def main():
         quantum_compress(os.path.getsize(input_file))
 
     elif mode == "extract":
-        # Extract chunk size from filename
-        try:
-            base_name, chunk_size = input_file.rsplit("_", 1)
-            chunk_size = int(chunk_size.rstrip(".b"))
-        except ValueError:
-            print("❌ Error: Invalid file format. Expected 'filename_chunk.b'.")
-            return
+        restored_file = f"extract.{Path(input_file).stem}"
 
-        restored_file = f"extract.{Path(base_name).name}"
-        decompress_and_restore(input_file, restored_file, chunk_size)
+        # Start extraction timer
+        start_extract = time.perf_counter_ns()
+
+        decompress_and_restore(input_file, restored_file, os.path.getsize(restored_file))
+
+        # End extraction timer
+        end_extract = time.perf_counter_ns()
+        extraction_time_ns = end_extract - start_extract
+        print(f"⏳ Extraction time: {extraction_time_ns} nanoseconds")
+
         quantum_compress(os.path.getsize(restored_file))
 
     else:

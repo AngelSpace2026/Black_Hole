@@ -1,4 +1,5 @@
 import os
+import time
 import zstandard as zstd
 from pathlib import Path
 import math
@@ -46,7 +47,6 @@ def find_best_chunk_size(input_filename):
     file_size = os.path.getsize(input_filename)
     best_chunk_size = 1
     best_compression_ratio = float('inf')
-    best_compressed_file = None
 
     print(f"📏 Checking best chunk size from 1 to {file_size} bytes...")
 
@@ -63,7 +63,6 @@ def find_best_chunk_size(input_filename):
         if compression_ratio < best_compression_ratio:
             best_compression_ratio = compression_ratio
             best_chunk_size = chunk_size
-            best_compressed_file = compressed_file
 
         os.remove(reversed_file)
         os.remove(compressed_file)
@@ -91,9 +90,26 @@ def process_compression(input_filename):
     compressed_file = f"compress.{Path(input_filename).name}.b"
     restored_file = f"extract.{Path(input_filename).name}"
 
+    # Start compression timer
+    start_compress = time.perf_counter_ns()
+
     reverse_and_save(input_filename, reversed_file, best_chunk_size)
     compress_reversed(reversed_file, compressed_file, best_chunk_size)
+
+    # End compression timer
+    end_compress = time.perf_counter_ns()
+    compression_time_ns = end_compress - start_compress
+    print(f"⏳ Compression time: {compression_time_ns} nanoseconds")
+
+    # Start extraction timer
+    start_extract = time.perf_counter_ns()
+
     decompress_and_restore(compressed_file, restored_file)
+
+    # End extraction timer
+    end_extract = time.perf_counter_ns()
+    extraction_time_ns = end_extract - start_extract
+    print(f"⏳ Extraction time: {extraction_time_ns} nanoseconds")
 
     quantum_compression_simulation(file_size)
 
@@ -104,7 +120,17 @@ def process_compression(input_filename):
 # Extraction process
 def process_extraction(input_filename):
     restored_file = f"extract.{Path(input_filename).name.replace('compress.', '').replace('.b', '')}"
+
+    # Start extraction timer
+    start_extract = time.perf_counter_ns()
+
     decompress_and_restore(input_filename, restored_file)
+
+    # End extraction timer
+    end_extract = time.perf_counter_ns()
+    extraction_time_ns = end_extract - start_extract
+    print(f"⏳ Extraction time: {extraction_time_ns} nanoseconds")
+
     print(f"✅ Extracted file: '{restored_file}'")
 
 # Main function

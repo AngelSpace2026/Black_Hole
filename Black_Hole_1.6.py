@@ -44,7 +44,7 @@ def compress_reversed(reversed_filename, compressed_filename, chunk_size, num_ch
         reversed_data = infile.read()
 
     # Store metadata (chunk size and num_chunks) in the first 8 bytes (4 bytes each)
-    metadata = struct.pack(">II", chunk_size, num_chunks)
+    metadata = struct.pack(">H", num_chunks)  # Store num_chunks as a 10-bit value in 2 bytes
     compressed_data = paq.compress(metadata + reversed_data)
 
     with open(compressed_filename, 'wb') as outfile:
@@ -57,12 +57,12 @@ def decompress_and_restore(compressed_filename, restored_filename):
 
     decompressed_data = paq.decompress(compressed_data)
 
-    # Read metadata (first 8 bytes)
-    chunk_size, num_chunks = struct.unpack(">II", decompressed_data[:8])
-
-    reversed_data = decompressed_data[8:]  # Actual reversed data
+    # Read metadata (first 2 bytes for num_chunks)
+    num_chunks = struct.unpack(">H", decompressed_data[:2])[0] & 0x03FF  # Mask 10 bits
+    reversed_data = decompressed_data[2:]  # Actual reversed data
 
     # Reconstruct the original file by reversing the first `num_chunks` chunks
+    chunk_size = len(reversed_data) // num_chunks  # Approximate chunk size
     chunked_data = [reversed_data[i:i + chunk_size] for i in range(0, len(reversed_data), chunk_size)]
     for i in range(num_chunks):
         if i < len(chunked_data):
