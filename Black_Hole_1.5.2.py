@@ -71,19 +71,23 @@ def decompress_and_restore(compressed_filename, restored_filename):
     except Exception as e:
         print(f"Error during extraction: {e}")
 
-# Quantum-inspired optimization for positions (without using Aer or execute)
+# Quantum-inspired optimization for positions (with qubits = 2 ** (chunk_size + 1))
 def quantum_optimize_positions(file_size, chunk_size):
-    # Initialize the quantum circuit for randomness
-    qc = QuantumCircuit(3, 3)  # A simple 3-qubit circuit for this example
-    qc.h([0, 1, 2])  # Apply Hadamard gates to create a superposition of all possible states
+    # Initialize the quantum circuit with 2 ** (chunk_size + 1) qubits
+    num_qubits = 2 ** (chunk_size + 1)
+    qc = QuantumCircuit(num_qubits, num_qubits)
 
-    # Simulate a randomness by using the quantum circuit's state to choose positions (no Aer needed)
+    # Apply Hadamard gates to create a superposition of all possible states
+    for qubit in range(num_qubits):
+        qc.h(qubit)
+
+    # Simulate randomness by selecting positions based on chunk size
     positions = random.sample(range(file_size // chunk_size), random.randint(1, file_size // chunk_size))
-    
-    # Return best chunk positions (based on randomness)
+
+    # Return the selected positions for chunk reversal
     return positions
 
-# Finding the best chunk strategy
+# Finding the best chunk strategy with multiple chunk sizes (1-64)
 def find_best_chunk_strategy(input_filename):
     file_size = os.path.getsize(input_filename)
     best_chunk_size = 1
@@ -92,21 +96,10 @@ def find_best_chunk_strategy(input_filename):
 
     print(f"📏 Finding the best chunk strategy...")
 
-    # Set the maximum chunk size (2^28)
-    max_chunk_size = 2**28
-
-    # Ensure chunk size does not exceed the file size
-    max_chunk_size = min(max_chunk_size, file_size)
-
-    # Iterate through chunk sizes from 1 to the max allowed
-    for chunk_size in range(1, max_chunk_size + 1):
-        # For files larger than 2^28 bytes, apply quantum optimization for positions
-        if file_size > 2**28:
-            print("This file is too big!")
-            positions = quantum_optimize_positions(file_size, chunk_size)
-        else:
-            # For smaller files, use a simple default position strategy
-            positions = [0]
+    # Iterate through chunk sizes from 1 to 64
+    for chunk_size in range(1, 65):  # Chunk sizes 1-64
+        # Quantum-inspired optimization for positions using qubits
+        positions = quantum_optimize_positions(file_size, chunk_size)
 
         reversed_data = reverse_chunks(input_filename, chunk_size, positions)
         compressed_filename = f"compress.{Path(input_filename).name}.b"
