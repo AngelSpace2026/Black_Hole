@@ -1,5 +1,4 @@
 import os
-import time
 import zstandard as zstd
 import struct
 from pathlib import Path
@@ -81,13 +80,16 @@ def quantum_optimize_positions(file_size, chunk_size):
     for qubit in range(num_qubits):
         qc.h(qubit)
 
-    # Simulate randomness by selecting positions based on chunk size
-    positions = random.sample(range(file_size // chunk_size), random.randint(1, file_size // chunk_size))
+    # Set position limit to 63 if file size exceeds 63 bytes, otherwise use file size as the limit
+    max_positions = min(file_size, 63)
+
+    # Simulate randomness by selecting positions based on chunk size, ensuring they don't exceed max_positions
+    positions = random.sample(range(1, max_positions + 1), random.randint(1, max_positions))
 
     # Return the selected positions for chunk reversal
     return positions
 
-# Finding the best chunk strategy with multiple chunk sizes (1-64)
+# Finding the best chunk strategy with multiple chunk sizes (1-63)
 def find_best_chunk_strategy(input_filename):
     file_size = os.path.getsize(input_filename)
     best_chunk_size = 1
@@ -97,7 +99,7 @@ def find_best_chunk_strategy(input_filename):
     print(f"📏 Finding the best chunk strategy...")
 
     # Iterate through chunk sizes from 1 to 64
-    for chunk_size in range(1, 65):  # Chunk sizes 1-64
+    for chunk_size in range(1, 64):  # Chunk sizes 1-63
         # Quantum-inspired optimization for positions using qubits
         positions = quantum_optimize_positions(file_size, chunk_size)
 
