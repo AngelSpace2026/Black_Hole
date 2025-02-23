@@ -92,9 +92,16 @@ def find_best_chunk_strategy(input_filename):
 
     print(f"📏 Finding the best chunk strategy...")
 
-    for chunk_size in range(1, file_size + 1):
-        # Quantum-inspired optimization for positions
-        positions = quantum_optimize_positions(file_size, chunk_size)
+    # Set the maximum chunk size (2^28)
+    max_chunk_size = 2**28
+
+    # Ensure chunk size does not exceed the file size
+    max_chunk_size = min(max_chunk_size, file_size)
+
+    # Iterate through chunk sizes from 1 to the max allowed
+    for chunk_size in range(1, max_chunk_size + 1):
+        # For very small files, skip quantum optimization and choose a default strategy
+        positions = quantum_optimize_positions(file_size, chunk_size) if file_size > 64 else [0]
 
         reversed_data = reverse_chunks(input_filename, chunk_size, positions)
         compressed_filename = f"compress.{Path(input_filename).name}.b"
