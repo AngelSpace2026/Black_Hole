@@ -12,6 +12,9 @@ def reverse_chunks(input_filename, chunk_size, positions):
     with open(input_filename, 'rb') as infile:
         data = infile.read()
 
+    if chunk_size <= 0 or len(data) < chunk_size:
+        raise ValueError("Chunk size must be positive and less than file size.")
+    
     # Split the data into chunks
     chunked_data = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
 
@@ -19,7 +22,9 @@ def reverse_chunks(input_filename, chunk_size, positions):
     for pos in positions:
         if 0 <= pos < len(chunked_data):
             chunked_data[pos] = chunked_data[pos][::-1]
-
+        else:
+            print(f"⚠️ Invalid position {pos} (out of range), skipping this position.")
+    
     return chunked_data
 
 # Quantum reverse function (simulating the behavior without Aer and execute)
@@ -96,6 +101,10 @@ def find_best_chunk_strategy(input_filename):
     for chunk_size in range(1, file_size + 1):
         positions = random.sample(range(file_size // chunk_size), random.randint(1, file_size // chunk_size))
 
+        if chunk_size <= 0 or len(positions) == 0:
+            print("⚠️ Invalid chunk size or positions, skipping this iteration.")
+            continue
+
         reversed_data = reverse_chunks(input_filename, chunk_size, positions)
         compressed_filename = f"compress.{Path(input_filename).name}.b"
         compress_with_zstd(reversed_data, compressed_filename, chunk_size, positions)
@@ -140,4 +149,4 @@ def main():
         process_extraction(input("Enter input file name to extract: ").strip())
 
 if __name__ == "__main__":
-    main()()
+    main()
