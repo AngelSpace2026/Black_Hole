@@ -29,7 +29,9 @@ def reverse_chunks(input_filename, chunk_size, positions):
 
 # Quantum reverse function (simulating the behavior without Aer and execute)
 def quantum_reverse(input_filename, chunk_size, qubits):
-    # Simulate the quantum operation on chunk indices using Qiskit
+    # Ensure the number of qubits is at least 12
+    qubits = max(qubits, 12)
+    
     # Create quantum circuit with qubits
     qc = QuantumCircuit(qubits)
     qc.h(range(qubits))  # Apply Hadamard gate to all qubits (superposition)
