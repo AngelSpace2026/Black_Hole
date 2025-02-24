@@ -25,48 +25,28 @@ def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, p
     with open(reversed_filename, 'wb') as outfile:
         outfile.write(b"".join(chunked_data))
 
-# Quantum encoding: Example of encoding data using quantum gates without Aer/execute
-def quantum_encode(data):
-    # Convert data into binary representation (string of 1s and 0s)
-    bin_data = ''.join(format(byte, '08b') for byte in data)
-    
-    # Create a quantum circuit with a number of qubits equal to the length of the binary data
-    qc = QuantumCircuit(len(bin_data), len(bin_data))
-    
-    # Apply a Hadamard gate to each qubit to create superposition
-    for i in range(len(bin_data)):
-        if bin_data[i] == '1':
-            qc.x(i)  # Apply X gate if the bit is 1
-        qc.h(i)  # Apply Hadamard gate to create superposition
-
-    # Simulate quantum state manually (no Aer/execute)
-    # We'll use the state vector as the result directly (bypassing Aer)
-    statevector = [0] * len(qc.qubits)
-    
-    # Simple simulation: Apply Hadamard and X gates directly to statevector
-    for i in range(len(bin_data)):
-        if bin_data[i] == '1':
-            statevector[i] = 1  # If the bit is 1, we set the state to 1
-        # Hadamard gate would apply a simple transformation in the real quantum system
-        # Here, we simply simulate it by flipping between 0 and 1 based on the index
-        statevector[i] = 1 - statevector[i]  # Flip for simulation purposes
-    
-    return statevector
+# Function to generate a random number (simulating quantum-like randomness)
+def generate_random_number(num_bits=28):
+    # Simulate quantum randomness by generating a random integer within the range of 0 to 2^28
+    random_number = random.getrandbits(num_bits)  # Generate random number with 'num_bits' bits
+    return random_number % (2**28)  # Ensure the number fits within 28 bits
 
 # Compress using zstd with metadata
 def compress_with_zstd(reversed_filename, compressed_filename, chunk_size, positions, original_size):
     with open(reversed_filename, 'rb') as infile:
         reversed_data = infile.read()
 
-    # Quantum encoding
-    quantum_state = quantum_encode(reversed_data)
-    print(f"Quantum-encoded state vector: {quantum_state[:10]}...")  # Print the first 10 values for brevity
-
     # Pack the chunk size (4 bytes), positions, and original file size (8 bytes) into the metadata
     metadata = struct.pack(">Q", original_size)  # Store original file size (8 bytes)
     metadata += struct.pack(">I", chunk_size)  # Store chunk size as 4 bytes (4 bytes)
-    metadata += struct.pack(f">H", len(positions))  # Store number of positions (2 bytes)
-    metadata += struct.pack(f">{len(positions)}H", *positions)  # Store positions
+    metadata += struct.pack(">H", len(positions))  # Store number of positions (2 bytes)
+    
+    # Pack positions as 28-bit integers, which requires a bit of custom packing
+    for pos in positions:
+        # Ensure that position fits within 28-bit range
+        if pos < 0 or pos >= 2**28:
+            raise ValueError(f"Position {pos} is out of bounds for 28-bit encoding (should be 0 to 2^28-1).")
+        metadata += struct.pack(">I", pos)  # Pack each position as a 32-bit integer (will mask later)
 
     # Create a compressor
     cctx = zstd.ZstdCompressor()
@@ -95,10 +75,10 @@ def decompress_and_restore_zstd(compressed_filename, restored_filename):
     original_size = struct.unpack(">Q", decompressed_data[:8])[0]  # First 8 bytes for original file size
     chunk_size = struct.unpack(">I", decompressed_data[8:12])[0]  # Next 4 bytes for chunk size
     num_positions = struct.unpack(">H", decompressed_data[12:14])[0]  # Next 2 bytes for number of positions
-    positions = list(struct.unpack(f">{num_positions}H", decompressed_data[14:14 + num_positions * 2]))  # Extract positions
+    positions = list(struct.unpack(f">{num_positions}I", decompressed_data[14:14 + num_positions * 4]))  # Extract positions
 
     # Reconstruct the chunks
-    chunked_data = decompressed_data[14 + num_positions * 2:]
+    chunked_data = decompressed_data[14 + num_positions * 4:]
 
     total_chunks = len(chunked_data) // chunk_size
     chunked_data = [chunked_data[i * chunk_size:(i + 1) * chunk_size] for i in range(total_chunks)]
