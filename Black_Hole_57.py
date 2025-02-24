@@ -1,7 +1,7 @@
 import os
 import random
 import struct
-import paq 
+import paq
 
 # Reverse chunks at specified positions
 def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, positions):
@@ -24,7 +24,7 @@ def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, p
     with open(reversed_filename, 'wb') as outfile:
         outfile.write(b"".join(chunked_data))
 
-# Compress using zlib with metadata
+# Compress using Zlib with metadata
 def compress_with_zlib(reversed_filename, compressed_filename, chunk_size, positions, original_size):
     with open(reversed_filename, 'rb') as infile:
         reversed_data = infile.read()
@@ -35,7 +35,7 @@ def compress_with_zlib(reversed_filename, compressed_filename, chunk_size, posit
     metadata += struct.pack(">I", len(positions))  # Number of positions (4 bytes)
     metadata += struct.pack(f">{len(positions)}I", *positions)  # Store positions (each 4 bytes)
 
-    # Compress the file with metadata using zlib
+    # Compress the file with metadata
     compressed_data = paq.compress(metadata + reversed_data)
 
     with open(compressed_filename, 'wb') as outfile:
@@ -43,12 +43,12 @@ def compress_with_zlib(reversed_filename, compressed_filename, chunk_size, posit
 
     print(f"✅ Compressed file saved at: {os.path.abspath(compressed_filename)}")
 
-# Decompress and restore data using zlib
+# Decompress and restore data
 def decompress_and_restore_zlib(compressed_filename, restored_filename):
     with open(compressed_filename, 'rb') as infile:
         compressed_data = infile.read()
 
-    # Decompress using zlib
+    # Decompress the data
     decompressed_data = paq.decompress(compressed_data)
 
     # Extract metadata
