@@ -1,11 +1,9 @@
 import os
-import zlib
 import random
 import struct
-import zstandard as zstd
 from pathlib import Path
-# Import Qiskit without Aer and execute
-from qiskit import QuantumCircuit  # Just import QuantumCircuit, no Aer or execute
+import zstandard as zstd
+from qiskit import QuantumCircuit
 
 # Reverse chunks at specified indices starting from the first byte
 def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, positions):
@@ -38,41 +36,68 @@ def compress_with_zstd(reversed_filename, compressed_filename, chunk_size, posit
     metadata += struct.pack(f">H", len(positions))  # Store number of positions (2 bytes)
     metadata += struct.pack(f">{len(positions)}H", *positions)  # Store positions
 
-    # Compress the file with the metadata using zstd
+    # Create a compressor
     cctx = zstd.ZstdCompressor()
+
+    # Compress the file with the metadata
     compressed_data = cctx.compress(metadata + reversed_data)
 
     with open(compressed_filename, 'wb') as outfile:
         outfile.write(compressed_data)
 
-# Decompress and restoration using zstd
-def decompress_and_restore(compressed_filename, restored_filename):
+# Decompression and restoration using zstd
+def decompress_and_restore_zstd(compressed_filename, restored_filename):
     with open(compressed_filename, 'rb') as infile:
-        # Read the entire file at once, including metadata and compressed data
-        file_data = infile.read()
+        compressed_data = infile.read()
 
-    # Create a decompressor object and decompress the file
+    # Create a decompressor
     dctx = zstd.ZstdDecompressor()
-    decompressed_data = dctx.decompress(file_data)
 
-    # Extract metadata and data
-    metadata_size = struct.calcsize(">QH H")
-    metadata = decompressed_data[:metadata_size]
-    data = decompressed_data[metadata_size:]
+    # Decompress the data
+    decompressed_data = dctx.decompress(compressed_data)
 
     # Extract metadata
-    original_size, chunk_size, positions_count = struct.unpack(">QH H", metadata)
-    positions = struct.unpack(f">{positions_count}H", decompressed_data[metadata_size:metadata_size + 2 * positions_count])
+    original_size = struct.unpack(">Q", decompressed_data[:8])[0]  # First 8 bytes for original file size
+    chunk_size = struct.unpack(">H", decompressed_data[8:10])[0]  # Next 2 bytes for chunk size
+    num_positions = struct.unpack(">H", decompressed_data[10:12])[0]  # Next 2 bytes for number of positions
+    positions = list(struct.unpack(f">{num_positions}H", decompressed_data[12:12 + num_positions * 2]))  # Extract positions
 
-    # Save the decompressed data to file
+    # Reconstruct the chunks
+    chunked_data = decompressed_data[12 + num_positions * 2:]
+
+    total_chunks = len(chunked_data) // chunk_size
+    chunked_data = [chunked_data[i * chunk_size:(i + 1) * chunk_size] for i in range(total_chunks)]
+
+    # Reverse the chunks at specified positions
+    for pos in positions:
+        if 0 <= pos < len(chunked_data):
+            chunked_data[pos] = chunked_data[pos][::-1]
+
+    restored_data = b"".join(chunked_data)
+
+    # Trim to the original size
+    restored_data = restored_data[:original_size]
+
     with open(restored_filename, 'wb') as outfile:
-        outfile.write(data)
+        outfile.write(restored_data)
 
-    print(f"✅ Decompression successful: {restored_filename}")
+    print(f"✅ File extracted to: {restored_filename}")
 
 # Function to extract file name with extension
 def extract_filename_with_extension(filename):
     return Path(filename).name
+
+# Quantum operation demonstration
+def apply_quantum_operation():
+    # Create a quantum circuit with 1 qubit
+    circuit = QuantumCircuit(1)
+
+    # Apply a Hadamard gate
+    circuit.h(0)
+
+    # Show the circuit (this is for demonstration purposes, no execution)
+    print("\nQuantum Circuit with Hadamard Gate Applied:")
+    print(circuit.draw())
 
 # Find best chunking strategy based on file size
 def find_best_chunk_strategy(input_filename):
@@ -92,53 +117,43 @@ def find_best_chunk_strategy(input_filename):
             positions_count = random.randint(1, min(max_positions, 64))  # Limit to max positions or 64
             positions = random.sample(range(max_positions), positions_count)
 
-            reversed_file = input_filename + ".rev"
-            compressed_file = f"compress.{Path(input_filename).name}.zst"
-
+            reversed_file = "reversed_file.bin"
             reverse_chunks_at_positions(input_filename, reversed_file, chunk_size, positions)
-            compress_with_zstd(reversed_file, compressed_file, chunk_size, positions, file_size)
 
+            # Compress the reversed file
+            compressed_file = "compressed_file.bin"
+            original_size = os.path.getsize(input_filename)
+            compress_with_zstd(reversed_file, compressed_file, chunk_size, positions, original_size)
+
+            # Calculate compression ratio
             compressed_size = os.path.getsize(compressed_file)
-            compression_ratio = compressed_size / file_size
+            compression_ratio = compressed_size / original_size
 
+            # Track the best compression ratio
             if compression_ratio < best_compression_ratio:
                 best_compression_ratio = compression_ratio
                 best_chunk_size = chunk_size
                 best_positions = positions
 
-            os.remove(reversed_file)
-            os.remove(compressed_file)
+    print(f"✅ Best chunk size: {best_chunk_size}, Best positions: {best_positions} (Compression Ratio: {best_compression_ratio})")
 
-    print(f"✅ Best chunk size: {best_chunk_size}, Best positions: {best_positions} (Compression Ratio: {best_compression_ratio:.4f})")
-
-    return best_chunk_size, best_positions
-
-# Process compression
-def process_compression(input_filename):
-    print(f"🔧 Starting compression for {input_filename}")
-    best_chunk_size, best_positions = find_best_chunk_strategy(input_filename)
-
-    reversed_file = input_filename + ".rev"
-    compressed_file = f"compress.{Path(input_filename).name}.zst"
-    extracted_file_name = f"extract.{Path(input_filename).stem}.{Path(input_filename).suffix}"
-
-    reverse_chunks_at_positions(input_filename, reversed_file, best_chunk_size, best_positions)
-    compress_with_zstd(reversed_file, compressed_file, best_chunk_size, best_positions, os.path.getsize(input_filename))
-    print(f"✅ File compressed: {compressed_file}")
-
-    decompress_and_restore(compressed_file, extracted_file_name)
-    print(f"✅ File extracted to: {extracted_file_name}")
-
-# Main function to run the compression process
-if __name__ == "__main__":
+# Main function
+def main():
+    print("Created by Jurijus Pacalovas.")
+    
     mode = int(input("Enter mode (1 for compress, 2 for extract): "))
-
-    if mode == 1:  # Compress
+    
+    if mode == 1:  # Compression
         input_filename = input("Enter input file name to compress: ")
-        process_compression(input_filename)
+        find_best_chunk_strategy(input_filename)
+        
+    elif mode == 2:  # Extraction
+        compressed_filename = input("Enter compressed file name to extract: ")
+        restored_filename = input("Enter restored file name: ")
+        decompress_and_restore_zstd(compressed_filename, restored_filename)
+    
+    # Example of quantum operation demonstration
+    apply_quantum_operation()
 
-    elif mode == 2:  # Extract
-        input_filename = input("Enter input file name to extract: ")
-        restored_filename = f"restored_{Path(input_filename).name}"
-        decompress_and_restore(input_filename, restored_filename)
-        print(f"✅ File extracted to: {restored_filename}")
+if __name__ == "__main__":
+    main()
