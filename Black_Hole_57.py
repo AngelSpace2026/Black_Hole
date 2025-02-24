@@ -1,8 +1,7 @@
 import os
 import random
 import struct
-from pathlib import Path
-import zstandard as zstd
+import paq # Importing zlib instead of zstandard
 
 # Reverse chunks at specified positions
 def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, positions):
@@ -25,8 +24,8 @@ def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, p
     with open(reversed_filename, 'wb') as outfile:
         outfile.write(b"".join(chunked_data))
 
-# Compress using Zstd with metadata
-def compress_with_zstd(reversed_filename, compressed_filename, chunk_size, positions, original_size):
+# Compress using zlib with metadata
+def compress_with_zlib(reversed_filename, compressed_filename, chunk_size, positions, original_size):
     with open(reversed_filename, 'rb') as infile:
         reversed_data = infile.read()
 
@@ -36,22 +35,21 @@ def compress_with_zstd(reversed_filename, compressed_filename, chunk_size, posit
     metadata += struct.pack(">I", len(positions))  # Number of positions (4 bytes)
     metadata += struct.pack(f">{len(positions)}I", *positions)  # Store positions (each 4 bytes)
 
-    # Compress the file with metadata
-    cctx = zstd.ZstdCompressor()
-    compressed_data = cctx.compress(metadata + reversed_data)
+    # Compress the file with metadata using zlib
+    compressed_data = paq.compress(metadata + reversed_data)
 
     with open(compressed_filename, 'wb') as outfile:
         outfile.write(compressed_data)
 
     print(f"✅ Compressed file saved at: {os.path.abspath(compressed_filename)}")
 
-# Decompress and restore data
-def decompress_and_restore_zstd(compressed_filename, restored_filename):
+# Decompress and restore data using zlib
+def decompress_and_restore_zlib(compressed_filename, restored_filename):
     with open(compressed_filename, 'rb') as infile:
         compressed_data = infile.read()
 
-    dctx = zstd.ZstdDecompressor()
-    decompressed_data = dctx.decompress(compressed_data)
+    # Decompress using zlib
+    decompressed_data = paq.decompress(compressed_data)
 
     # Extract metadata
     original_size = struct.unpack(">Q", decompressed_data[:8])[0]  # First 8 bytes: original file size
@@ -78,7 +76,7 @@ def decompress_and_restore_zstd(compressed_filename, restored_filename):
 
     print(f"✅ File extracted to: {os.path.abspath(restored_filename)}")
 
-# Find best chunk strategy for compression
+# Find best chunk strategy for compression and best reverse positions
 def find_best_chunk_strategy(input_filename):
     file_size = os.path.getsize(input_filename)
     best_chunk_size = 1
@@ -87,9 +85,11 @@ def find_best_chunk_strategy(input_filename):
 
     print("📏 Finding the best chunk strategy...")
 
-    for chunk_size in range(1, min(64, file_size // 2) + 1):
+    # Try different chunk sizes from 1 to 255
+    for chunk_size in range(1, 256):
         max_positions = file_size // chunk_size
         if max_positions > 0:
+            # Try different numbers of reversed positions (random sample)
             positions_count = random.randint(1, min(max_positions, 64))
             positions = random.sample(range(max_positions), positions_count)
 
@@ -98,11 +98,12 @@ def find_best_chunk_strategy(input_filename):
 
             compressed_file = "compressed_file.bin"
             original_size = os.path.getsize(input_filename)
-            compress_with_zstd(reversed_file, compressed_file, chunk_size, positions, original_size)
+            compress_with_zlib(reversed_file, compressed_file, chunk_size, positions, original_size)
 
             compressed_size = os.path.getsize(compressed_file)
             compression_ratio = compressed_size / original_size
 
+            # Track the best compression ratio and corresponding chunk size and positions
             if compression_ratio < best_compression_ratio:
                 best_compression_ratio = compression_ratio
                 best_chunk_size = chunk_size
@@ -123,7 +124,7 @@ def main():
     elif mode == 2:  # Extraction
         compressed_filename = input("Enter compressed file name to extract: ")
         restored_filename = input("Enter restored file name: ")
-        decompress_and_restore_zstd(compressed_filename, restored_filename)
+        decompress_and_restore_zlib(compressed_filename, restored_filename)
 
 if __name__ == "__main__":
     main()
