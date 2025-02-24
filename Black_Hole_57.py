@@ -1,7 +1,7 @@
 import os
 import random
 import struct
-import paq # Importing zlib instead of zstandard
+import paq 
 
 # Reverse chunks at specified positions
 def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, positions):
