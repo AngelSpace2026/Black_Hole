@@ -110,13 +110,12 @@ def find_best_chunk_strategy(input_filename):
                     best_chunk_size = chunk_size
                     best_positions = positions
                     best_count += 1  # Count how many times a new best is found
+                    
+                    if  best_count==5:
+                        
+                        raise SystemExit
 
-                    if best_count == 1:
-                        print("⏳ First best compression found. Sleeping for 5 seconds...")
-                        time.sleep(5)
-                    else:
-                        print(f"⏳ Found the best compression for the {best_count}th time! Sleeping for 30 seconds...")
-                        time.sleep(30)
+
 
                 print(f"✅ Best compression so far: {best_compression_ratio} (Chunk size: {best_chunk_size}, Positions: {best_positions})")
                 print(f"🔁 Continuing search for better compression...")
