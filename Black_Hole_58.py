@@ -1,7 +1,6 @@
 import os
 import random
 import struct
-import time
 import paq
 
 # Reverse chunks at specified positions
@@ -26,25 +25,32 @@ def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, p
         outfile.write(b"".join(chunked_data))
 
 # Compress using PAQ with metadata
-def compress_with_paq(reversed_filename, compressed_filename, chunk_size, positions, original_size):
+def compress_with_paq(reversed_filename, compressed_filename, chunk_size, positions, previous_size, original_size):
     with open(reversed_filename, 'rb') as infile:
         reversed_data = infile.read()
 
-    # Pack metadata
-    metadata = struct.pack(">Q", original_size)  
-    metadata += struct.pack(">I", chunk_size)  
-    metadata += struct.pack(">I", len(positions))  
-    metadata += struct.pack(f">{len(positions)}I", *positions)  
+    # Pack metadata (previous_size must be an integer, chunk_size and positions count as well)
+    metadata = struct.pack(">Q", original_size)  # Store the original size
+    metadata += struct.pack(">I", chunk_size)  # Chunk size (as I for unsigned int)
+    metadata += struct.pack(">I", len(positions))  # Number of positions (as I for unsigned int)
+    metadata += struct.pack(f">{len(positions)}I", *positions)  # Positions (as a list of unsigned ints)
 
     # Compress the file
     compressed_data = paq.compress(metadata + reversed_data)
 
-    with open(compressed_filename, 'wb') as outfile:
-        outfile.write(compressed_data)
-
-    compressed_size = os.path.getsize(compressed_filename)
+    # Get the current compressed size
+    compressed_size = len(compressed_data)
     print(f"✅ Compressed file size: {compressed_size} bytes")
-    return compressed_size
+
+    # Only save if the current compressed size is smaller than the previous size
+    if compressed_size < previous_size:
+        with open(compressed_filename, 'wb') as outfile:
+            outfile.write(compressed_data)
+        print(f"✅ Compressed file saved: {compressed_filename}")
+        return compressed_size
+    else:
+        print(f"❌ Compressed file not saved because it is larger than the previous file size.")
+        return previous_size
 
 # Decompress and restore data
 def decompress_and_restore_paq(compressed_filename, restored_filename):
@@ -55,7 +61,7 @@ def decompress_and_restore_paq(compressed_filename, restored_filename):
     decompressed_data = paq.decompress(compressed_data)
 
     # Extract metadata
-    original_size = struct.unpack(">Q", decompressed_data[:8])[0]  # Original size from metadata
+    original_size = struct.unpack(">Q", decompressed_data[:8])[0]  # Original size (from last compression)
     chunk_size = struct.unpack(">I", decompressed_data[8:12])[0]  # Chunk size
     num_positions = struct.unpack(">I", decompressed_data[12:16])[0]  # Number of reversed positions
     positions = list(struct.unpack(f">{num_positions}I", decompressed_data[16:16 + num_positions * 4]))  # Reversed positions
@@ -75,8 +81,8 @@ def decompress_and_restore_paq(compressed_filename, restored_filename):
     # Combine the chunks
     restored_data = b"".join(chunked_data)
 
-    # Ensure the restored data is exactly the original size
-    restored_data = restored_data[:original_size]
+    # Ensure the restored data is exactly the size of the original file (truncate or pad)
+    restored_data = restored_data[:original_size]  # Truncate to original size if needed
 
     # Write the restored data to the file
     with open(restored_filename, 'wb') as outfile:
@@ -94,6 +100,8 @@ def find_best_chunk_strategy(input_filename):
 
     print("📏 Searching for the best compression strategy (Infinite Mode)...")
 
+    previous_size = 10**12  # Use a very large number to ensure first compression happens
+
     while True:  # Infinite loop to keep improving
         for chunk_size in range(1, 256):
             max_positions = file_size // chunk_size
@@ -105,26 +113,11 @@ def find_best_chunk_strategy(input_filename):
                 reverse_chunks_at_positions(input_filename, reversed_file, chunk_size, positions)
 
                 compressed_file = "compressed_file.bin"
-                original_size = os.path.getsize(input_filename)
-                compressed_size = compress_with_paq(reversed_file, compressed_file, chunk_size, positions, original_size)
+                compressed_size = compress_with_paq(reversed_file, compressed_file, chunk_size, positions, previous_size, file_size)
 
-                compression_ratio = compressed_size / original_size
-
-                if compression_ratio < best_compression_ratio:
-                    best_compression_ratio = compression_ratio
-                    best_chunk_size = chunk_size
-                    best_positions = positions
-                    best_count += 1  # Count how many times a new best is found
-
-                    if best_count == 1:
-                        print("⏳ First best compression found. Sleeping for 5 seconds...")
-                        time.sleep(5)
-                    else:
-                        print(f"⏳ Found the best compression for the {best_count}th time! Sleeping for 30 seconds...")
-                        time.sleep(30)
-
-                print(f"✅ Best compression so far: {best_compression_ratio} (Chunk size: {best_chunk_size}, Positions: {best_positions})")
-                print(f"🔁 Continuing search for better compression...")
+                # If the current compression was successful and file size is smaller, update previous size
+                if compressed_size < previous_size:
+                    previous_size = compressed_size
 
 # Main function
 def main():
