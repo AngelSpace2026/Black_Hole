@@ -18,7 +18,7 @@ def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, p
     # Reverse specified chunks
     for pos in positions:
         if 0 <= pos < len(chunked_data):
-            print(f"Reversing chunk at position: {pos}")
+            #print(f"Reversing chunk at position: {pos}")
             chunked_data[pos] = chunked_data[pos][::-1]
 
     with open(reversed_filename, 'wb') as outfile:
@@ -40,16 +40,17 @@ def compress_with_paq(reversed_filename, compressed_filename, chunk_size, positi
 
     # Get the current compressed size
     compressed_size = len(compressed_data)
-    print(f"✅ Compressed file size: {compressed_size} bytes")
+    compress_size="numbers"
 
     # Only save if the current compressed size is smaller than the previous size
     if compressed_size < previous_size:
         with open(compressed_filename, 'wb') as outfile:
             outfile.write(compressed_data)
-        print(f"✅ Compressed file saved: {compressed_filename}")
+        Tic=0
         return compressed_size
     else:
-        print(f"❌ Compressed file not saved because it is larger than the previous file size.")
+        Ex=0
+    
         return previous_size
 
 # Decompress and restore data
@@ -75,7 +76,7 @@ def decompress_and_restore_paq(compressed_filename, restored_filename):
     # Reverse chunks back
     for pos in positions:
         if 0 <= pos < len(chunked_data):
-            print(f"Reversing back chunk at position: {pos}")
+            #print(f"Reversing back chunk at position: {pos}")
             chunked_data[pos] = chunked_data[pos][::-1]
 
     # Combine the chunks
@@ -88,7 +89,7 @@ def decompress_and_restore_paq(compressed_filename, restored_filename):
     with open(restored_filename, 'wb') as outfile:
         outfile.write(restored_data)
 
-    print(f"✅ File extracted to: {os.path.abspath(restored_filename)} with size {len(restored_data)} bytes")
+
 
 # Find the best chunk strategy and keep searching infinitely
 def find_best_chunk_strategy(input_filename):
@@ -98,7 +99,7 @@ def find_best_chunk_strategy(input_filename):
     best_compression_ratio = float('inf')
     best_count = 0  
 
-    print("📏 Searching for the best compression strategy (Infinite Mode)...")
+
 
     previous_size = 10**12  # Use a very large number to ensure first compression happens
 
