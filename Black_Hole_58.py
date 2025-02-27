@@ -121,7 +121,7 @@ def find_best_chunk_strategy(input_filename):
                 # If the current compression was successful and file size is smaller, update previous size
                 if compressed_size < previous_size:
                     previous_size = compressed_size
-                elif compressed_size>previous_size:
+                elif compressed_size>=previous_size:
                     previous_size = compressed_size
 
 # Main function
