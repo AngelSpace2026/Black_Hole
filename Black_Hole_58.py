@@ -130,9 +130,7 @@ def main():
     
     if os.path.exists("compressed_file.bin"):
         os.remove("compressed_file.bin")
-    else:
-        print("File does not exist.")
-    
+
     mode = int(input("Enter mode (1 for compress, 2 for extract): "))
     
     if mode == 1:  
