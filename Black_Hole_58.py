@@ -46,33 +46,51 @@ def compress_with_paq(reversed_filename, compressed_filename, chunk_size, positi
 
 # Decompress and restore data
 def decompress_and_restore_paq(compressed_filename, restored_filename):
-    with open(compressed_filename, 'rb') as infile:
-        compressed_data = infile.read()
+    if not os.path.exists(compressed_filename):
+        print(f"Error: Incorrect file path '{compressed_filename}'.")
+        return
 
-    # Decompress data
-    decompressed_data = paq.decompress(compressed_data)
+    try:
+        with open(compressed_filename, 'rb') as infile:
+            compressed_data = infile.read()
 
-    # Extract metadata
-    original_size = struct.unpack(">Q", decompressed_data[:8])[0]
-    chunk_size = struct.unpack(">I", decompressed_data[8:12])[0]
-    num_positions = struct.unpack(">I", decompressed_data[12:16])[0]
-    positions = list(struct.unpack(f">{num_positions}I", decompressed_data[16:16 + num_positions * 4]))
+        # Decompress data
+        decompressed_data = paq.decompress(compressed_data)
 
-    # Extract chunked data
-    chunked_data = decompressed_data[16 + num_positions * 4:]
-    total_chunks = len(chunked_data) // chunk_size
-    chunked_data = [chunked_data[i * chunk_size:(i + 1) * chunk_size] for i in range(total_chunks)]
+        # Check if metadata exists
+        if len(decompressed_data) < 16:
+            print("Error: Incorrect file for extraction.")
+            return
 
-    # Reverse chunks back
-    for pos in positions:
-        if 0 <= pos < len(chunked_data):
-            chunked_data[pos] = chunked_data[pos][::-1]
+        # Extract metadata
+        original_size = struct.unpack(">Q", decompressed_data[:8])[0]
+        chunk_size = struct.unpack(">I", decompressed_data[8:12])[0]
+        num_positions = struct.unpack(">I", decompressed_data[12:16])[0]
 
-    # Reconstruct file
-    restored_data = b"".join(chunked_data)[:original_size]  # Ensure exact size
+        if len(decompressed_data) < (16 + num_positions * 4):
+            print("Error: Incorrect file for extraction.")
+            return
 
-    with open(restored_filename, 'wb') as outfile:
-        outfile.write(restored_data)
+        positions = list(struct.unpack(f">{num_positions}I", decompressed_data[16:16 + num_positions * 4]))
+
+        # Extract chunked data
+        chunked_data = decompressed_data[16 + num_positions * 4:]
+        total_chunks = len(chunked_data) // chunk_size
+        chunked_data = [chunked_data[i * chunk_size:(i + 1) * chunk_size] for i in range(total_chunks)]
+
+        # Reverse chunks back
+        for pos in positions:
+            if 0 <= pos < len(chunked_data):
+                chunked_data[pos] = chunked_data[pos][::-1]
+
+        # Reconstruct file
+        restored_data = b"".join(chunked_data)[:original_size]  # Ensure exact size
+
+        with open(restored_filename, 'wb') as outfile:
+            outfile.write(restored_data)
+
+    except Exception:
+        print("Error: Incorrect file for extraction.")
 
 # Find the best chunk strategy (runs infinitely)
 def find_best_chunk_strategy(input_filename):
@@ -108,15 +126,26 @@ def find_best_chunk_strategy(input_filename):
 def main():
     print("Created by Jurijus Pacalovas.")
 
-    mode = int(input("Enter mode (1 for compress, 2 for extract): "))
-    
-    if mode == 1:  
+    mode = input("Enter mode (1 for compress, 2 for extract): ")
+
+    if mode == "1":
         input_filename = input("Enter input file name to compress: ")
+
+        # Check if the file exists before proceeding
+        if not os.path.exists(input_filename):
+            print(f"Error: File '{input_filename}' not found.")
+            return
+
         find_best_chunk_strategy(input_filename)  # Infinite loop runs here
         
-    elif mode == 2:  
+    elif mode == "2":
         compressed_filename = input("Enter compressed file name to extract: ")
         restored_filename = input("Enter restored file name: ")
+
+        if not os.path.exists(compressed_filename):
+            print(f"Error: Incorrect file path '{compressed_filename}'.")
+            return
+
         decompress_and_restore_paq(compressed_filename, restored_filename)
 
 if __name__ == "__main__":
