@@ -1,7 +1,7 @@
 import os
 import random
 import struct
-import paq  # Ensure you have PAQ8PX or an equivalent library
+import paq  # Ensure this module exists or replace it with an external PAQ8PX call
 
 # Reverse chunks at specified positions
 def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, positions):
@@ -16,9 +16,9 @@ def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, p
         if 0 <= pos < len(chunked_data):
             chunked_data[pos] = chunked_data[pos][::-1]
 
-    # Write reversed data back with header
+    # Write reversed data back
     with open(reversed_filename, 'wb') as outfile:
-        outfile.write(b"\x00\x63\x00" + b"".join(chunked_data))  # Add header (00 63 00)
+        outfile.write(b"".join(chunked_data))
 
 # Compress using PAQ with metadata
 def compress_with_paq(reversed_filename, compressed_filename, chunk_size, positions, previous_size, original_size):
@@ -35,7 +35,6 @@ def compress_with_paq(reversed_filename, compressed_filename, chunk_size, positi
     compressed_data = paq.compress(metadata + reversed_data)
 
     compressed_size = len(compressed_data)
-    data =(metadata + reversed_data)
 
     # Handle compression results
     if compressed_size < previous_size:
@@ -47,10 +46,6 @@ def compress_with_paq(reversed_filename, compressed_filename, chunk_size, positi
 
 # Decompress and restore data
 def decompress_and_restore_paq(compressed_filename, restored_filename):
-    if not compressed_filename.endswith(".bin"):
-        print(f"Error: Incorrect file format. Expected '.bin', got '{compressed_filename}'.")
-        return
-
     if not os.path.exists(compressed_filename):
         print(f"Error: Incorrect file path '{compressed_filename}'.")
         return
@@ -59,24 +54,27 @@ def decompress_and_restore_paq(compressed_filename, restored_filename):
         with open(compressed_filename, 'rb') as infile:
             compressed_data = infile.read()
 
-        # Check the first three bytes of the compressed file to see if it matches the expected header
-        if compressed_data[:3] != b"\x00\x63\x00":
-            print("Incorrect header or file.")
-            return
-
         # Decompress data
         decompressed_data = paq.decompress(compressed_data)
+
+        # Check if metadata exists
+        if len(decompressed_data) < 16:
+            print("Error: Incorrect file for extraction.")
+            return
 
         # Extract metadata
         original_size = struct.unpack(">Q", decompressed_data[:8])[0]
         chunk_size = struct.unpack(">I", decompressed_data[8:12])[0]
         num_positions = struct.unpack(">I", decompressed_data[12:16])[0]
 
+        if len(decompressed_data) < (16 + num_positions * 4):
+            print("Error: Incorrect file for extraction.")
+            return
+
         positions = list(struct.unpack(f">{num_positions}I", decompressed_data[16:16 + num_positions * 4]))
 
-        # Extract chunked data (skip metadata)
+        # Extract chunked data
         chunked_data = decompressed_data[16 + num_positions * 4:]
-
         total_chunks = len(chunked_data) // chunk_size
         chunked_data = [chunked_data[i * chunk_size:(i + 1) * chunk_size] for i in range(total_chunks)]
 
@@ -88,16 +86,11 @@ def decompress_and_restore_paq(compressed_filename, restored_filename):
         # Reconstruct file
         restored_data = b"".join(chunked_data)[:original_size]  # Ensure exact size
 
-        # Check if the reconstructed data matches the original size, and print correct or incorrect
-        if len(restored_data) == original_size:
-            with open(restored_filename, 'wb') as outfile:
-                outfile.write(restored_data)
-            print("Correct")  # All chunks restored properly
-        else:
-            print("Chunks not correct")  # If the reconstructed file size is not correct
+        with open(restored_filename, 'wb') as outfile:
+            outfile.write(restored_data)
 
-    except Exception as e:
-        print(f"Error: {e}")
+    except Exception:
+        print("Error: Incorrect file for extraction.")
 
 # Find the best chunk strategy (runs infinitely)
 def find_best_chunk_strategy(input_filename):
@@ -148,10 +141,6 @@ def main():
     elif mode == "2":
         compressed_filename = input("Enter compressed file name to extract: ")
         restored_filename = input("Enter restored file name: ")
-
-        if not compressed_filename.endswith(".bin"):
-            print(f"Error: Incorrect file format. Expected '.bin', got '{compressed_filename}'.")
-            return
 
         if not os.path.exists(compressed_filename):
             print(f"Error: Incorrect file path '{compressed_filename}'.")
