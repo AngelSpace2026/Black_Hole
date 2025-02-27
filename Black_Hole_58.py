@@ -60,6 +60,8 @@ def decompress_and_restore_paq(compressed_filename, restored_filename):
 
     # Decompress the data
     decompressed_data = paq.decompress(compressed_data)
+    #bigger file if file not compress
+    Bigger_then_orginal=len(compressed_data)
 
     # Extract metadata
     original_size = struct.unpack(">Q", decompressed_data[:8])[0]  # Original size (from last compression)
@@ -119,10 +121,17 @@ def find_best_chunk_strategy(input_filename):
                 # If the current compression was successful and file size is smaller, update previous size
                 if compressed_size < previous_size:
                     previous_size = compressed_size
+                elif compressed_size>previous_size:
+                    previous_size = compressed_size
 
 # Main function
 def main():
     print("Created by Jurijus Pacalovas.")
+    
+    if os.path.exists("compressed_file.bin"):
+        os.remove("compressed_file.bin")
+    else:
+        print("File does not exist.")
     
     mode = int(input("Enter mode (1 for compress, 2 for extract): "))
     
