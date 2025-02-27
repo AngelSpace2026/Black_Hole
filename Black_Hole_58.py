@@ -40,17 +40,14 @@ def compress_with_paq(reversed_filename, compressed_filename, chunk_size, positi
 
     # Get the current compressed size
     compressed_size = len(compressed_data)
-    compress_size="numbers"
 
-    # Only save if the current compressed size is smaller than the previous size
     if compressed_size < previous_size:
         with open(compressed_filename, 'wb') as outfile:
             outfile.write(compressed_data)
-        Tic=0
+            
         return compressed_size
     else:
-        Ex=0
-    
+     
         return previous_size
 
 # Decompress and restore data
