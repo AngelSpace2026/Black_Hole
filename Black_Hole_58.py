@@ -56,10 +56,10 @@ def compress_with_paq(reversed_filename, compressed_filename, chunk_size, positi
         return previous_size, first_attempt  # Do not overwrite the file if it's larger or equal
 
 # Decompress and restore data
-def decompress_and_restore_paq(compressed_filename, restored_filename):
-    # Check if the compressed file has the '.bin' extension
-    if not compressed_filename.endswith('.bin'):
-        print(f"Error: The compressed file must have a '.bin' extension, but the provided file is {compressed_filename}")
+def decompress_and_restore_paq(compressed_filename):
+    # Check if the compressed file has the '.compressed.bin' extension
+    if not compressed_filename.endswith('.compressed.bin'):
+        print(f"Error: The compressed file must have the '.compressed.bin' extension, but the provided file is {compressed_filename}")
         return
 
     # Check if the compressed file exists
@@ -105,6 +105,9 @@ def decompress_and_restore_paq(compressed_filename, restored_filename):
     # Ensure the restored data is exactly the size of the original file (truncate or pad)
     restored_data = restored_data[:original_size]  # Truncate to original size if needed
 
+    # Automatically generate the restored file name based on the compressed file name
+    restored_filename = compressed_filename.replace('.compressed.bin', '')  # Remove .compressed.bin extension
+
     # Write the restored data to the file
     with open(restored_filename, 'wb') as outfile:
         outfile.write(restored_data)
@@ -127,11 +130,11 @@ def find_best_chunk_strategy(input_filename):
                 positions_count = random.randint(1, min(max_positions, 64))
                 positions = random.sample(range(max_positions), positions_count)
 
-                reversed_file = "reversed_file.bin"
-                reverse_chunks_at_positions(input_filename, reversed_file, chunk_size, positions)
+                reversed_filename = f"{input_filename}.reversed.bin"
+                reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, positions)
 
-                compressed_file = "compressed_file.bin"
-                compressed_size, first_attempt = compress_with_paq(reversed_file, compressed_file, chunk_size, positions, previous_size, file_size, first_attempt)
+                compressed_filename = f"{input_filename}.compressed.bin"
+                compressed_size, first_attempt = compress_with_paq(reversed_filename, compressed_filename, chunk_size, positions, previous_size, file_size, first_attempt)
 
                 if compressed_size < previous_size:
                     # Update the best values when a better compression ratio is found
@@ -161,15 +164,18 @@ def main():
         find_best_chunk_strategy(input_filename)  # Infinite search
         
     elif mode == 2:  
-        compressed_filename = input("Enter compressed file name to extract: ")
-        restored_filename = input("Enter restored file name: ")
+        # Now user is prompted to enter the base name of the compressed file (without .compressed.bin)
+        compressed_filename_base = input("Enter the base name of the compressed file to extract (without .compressed.bin): ")
+
+        # Add the .compressed.bin extension to the input filename
+        compressed_filename = f"{compressed_filename_base}.compressed.bin"
         
-        # Check if the compressed file exists
+        # Perform the extraction (restoring) process
         if not os.path.exists(compressed_filename):
             print(f"Error: Compressed file {compressed_filename} not found!")
             return
         
-        decompress_and_restore_paq(compressed_filename, restored_filename)
+        decompress_and_restore_paq(compressed_filename)
 
 if __name__ == "__main__":
     main()
