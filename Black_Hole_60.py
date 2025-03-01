@@ -137,7 +137,7 @@ def find_best_chunk_strategy(input_filename):
                     best_compression_ratio = compressed_size / file_size
                     best_count += 1
 
-                    print(f"Improved compression with chunk size {chunk_size} and {len(positions)} reversed positions. Compression ratio: {best_compression_ratio:.4f}")
+                    #print(f"Improved compression with chunk size {chunk_size} and {len(positions)} reversed positions. Compression ratio: {best_compression_ratio:.4f}")
 
 # Main function
 def main():
