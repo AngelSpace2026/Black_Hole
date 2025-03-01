@@ -1,4 +1,12 @@
 # Black_Hole-1-45
+
+Black Hole 64
+I use algorithm paq and reverse many times compress minus random 1-255, reverse times times compress 1-255
+Reverse:
+Not negative
+Reverse x,y 1,2,3-size of file numbers chunk the time different numbers 1-size of file numbers e.g x,y,z a,b,c,d the best save and extract, repeats times reverse from 1-64 numbers
+Between 1-2**31 reverse
+
 #constant Jurijus Pacalovas 
 
 pip install cython
