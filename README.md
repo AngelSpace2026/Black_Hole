@@ -1,6 +1,8 @@
 # Black_Hole-1-45
 
-Black Hole 64
+Black Hole 57-64 algorithm
+57-63 use reverse
+64 every that here I explained
 I use algorithm paq and reverse many times compress minus random 1-255, reverse times times compress 1-255
 Reverse:
 Not negative
