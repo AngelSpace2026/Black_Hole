@@ -3,8 +3,8 @@ import random
 import struct
 import paq
 
-# Reverse chunks at specified positions
-def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, positions):
+# Reverse chunks at specified positions with spacing
+def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, number_of_positions):
     with open(input_filename, 'rb') as infile:
         data = infile.read()
 
@@ -14,6 +14,10 @@ def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, p
     # Add padding if needed
     if len(chunked_data[-1]) < chunk_size:
         chunked_data[-1] += b'\x00' * (chunk_size - len(chunked_data[-1]))
+
+    # Calculate positions with spacing between reversals
+    max_position = len(chunked_data)  # Number of chunks
+    positions = [i * (2**31) // max_position for i in range(number_of_positions)]
 
     # Reverse specified chunks
     for pos in positions:
@@ -70,7 +74,7 @@ def decompress_and_restore_paq(compressed_filename):
     with open(compressed_filename, 'rb') as infile:
         header_bytes = infile.read(3)
 
-        # Check if the first 3 bytes are the sequence 0x006300
+        # Check if the first 3 bytes are the sequence 0x006300 (for extraction only)
         if header_bytes != b'\x00\x63\x00':
             print(f"Error: The first bytes of the file are not the expected 0x006300, found: {header_bytes.hex()}")
             return
@@ -135,10 +139,12 @@ def find_best_chunk_strategy(input_filename):
             max_positions = file_size // chunk_size
             if max_positions > 0:
                 positions_count = random.randint(1, min(max_positions, 64))
-                positions = random.sample(range(max_positions), positions_count)
+                
+                # Calculate positions with spacing between reversals
+                positions = [i * (2**31) // file_size for i in range(positions_count)]
 
                 reversed_filename = f"{input_filename}.reversed.bin"
-                reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, positions)
+                reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, positions_count)
 
                 compressed_filename = f"{input_filename}.compressed.bin"
                 compressed_size, first_attempt = compress_with_paq(reversed_filename, compressed_filename, chunk_size, positions, previous_size, file_size, first_attempt)
@@ -172,7 +178,7 @@ def main():
 
     if mode == 1:
         input_filename = input("Enter input file name to compress: ")
-        # Check if the input file exists
+# Check if the input file exists
         if not os.path.exists(input_filename):
             print(f"Error: File {input_filename} not found!")
             return
