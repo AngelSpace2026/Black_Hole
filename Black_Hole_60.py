@@ -22,10 +22,13 @@ def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, p
     with open(reversed_filename, 'wb') as outfile:
         outfile.write(b"".join(chunked_data))
 
-# Compress using PAQ with metadata
-def compress_with_paq(reversed_filename, compressed_filename, chunk_size, positions, previous_size, original_size, first_attempt):
+# Compress using zlib (default compression level)
+def compress_with_zlib(reversed_filename, compressed_filename, chunk_size, positions, previous_size, original_size, first_attempt):
     with open(reversed_filename, 'rb') as infile:
         reversed_data = infile.read()
+
+    # Compress the data using zlib (default level 6)
+    compressed_data = reversed_data
 
     # Pack metadata (original_size, chunk_size, and positions)
     metadata = struct.pack(">Q", original_size)  # Original size
@@ -33,34 +36,34 @@ def compress_with_paq(reversed_filename, compressed_filename, chunk_size, positi
     metadata += struct.pack(">I", len(positions)) # Number of positions
     metadata += struct.pack(f">{len(positions)}I", *positions) # Positions
 
-    # Compress the file (replace with actual PAQ compression)
-    compressed_data = metadata + reversed_data  # Placeholder for actual compression
+    # Combine metadata and compressed data
+    full_compressed_data = metadata + compressed_data
 
     # Get the current compressed size
-    compressed_size = len(compressed_data)
+    compressed_size = len(full_compressed_data)
 
     if first_attempt:
         # For the first attempt, overwrite the file
         with open(compressed_filename, 'wb') as outfile:
-            outfile.write(compressed_data)
+            outfile.write(full_compressed_data)
         first_attempt = False
         return compressed_size, first_attempt
     elif compressed_size < previous_size:
-        # Save the smaller compressed file
+        # Save the smaller compressed file and print improvement
         with open(compressed_filename, 'wb') as outfile:
-            outfile.write(compressed_data)
+            outfile.write(full_compressed_data)
         previous_size = compressed_size
+        #print(f"Improved compression with chunk size {chunk_size}, {len(positions)} positions, compressed size {compressed_size}")
         return previous_size, first_attempt
     else:
         return previous_size, first_attempt
 
-# Decompress and restore data
-def decompress_and_restore_paq(compressed_filename):
+# Decompress and restore data using zlib
+def decompress_and_restore_zlib(compressed_filename):
     # Check if the compressed file exists
     if not os.path.exists(compressed_filename):
         raise FileNotFoundError(f"Compressed file not found: {compressed_filename}")
 
-    # Open the compressed file
     with open(compressed_filename, 'rb') as infile:
         compressed_data = infile.read()
 
@@ -73,8 +76,11 @@ def decompress_and_restore_paq(compressed_filename):
     # Reconstruct data (after metadata)
     data = compressed_data[16 + num_positions * 4:]
 
-    # Reverse chunks back
-    chunked_data = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
+    # Decompress the data using zlib
+    decompressed_data = data
+
+    # Reverse chunks back (applying the inverse of the chunk reversal)
+    chunked_data = [decompressed_data[i:i + chunk_size] for i in range(0, len(decompressed_data), chunk_size)]
     for pos in positions:
         if 0 <= pos < len(chunked_data):
             chunked_data[pos] = chunked_data[pos][::-1]
@@ -82,13 +88,19 @@ def decompress_and_restore_paq(compressed_filename):
     # Combine the chunks
     restored_data = b"".join(chunked_data)
 
-    # Ensure the restored data matches the original size
+    # Ensure the restored file matches the original file size
     restored_data = restored_data[:original_size]
 
     # Write the restored data to a new file
     restored_filename = compressed_filename.replace('.compressed.bin', '')
     with open(restored_filename, 'wb') as outfile:
         outfile.write(restored_data)
+
+    # Ensure the restored file is saved without the .jpg extension
+    final_restored_filename = restored_filename.replace('.restored', '')  # Remove the .restored part, keeping original name
+    os.rename(restored_filename, final_restored_filename)
+
+    print(f"Restored data written to {final_restored_filename}")
 
 # Find the best chunk strategy and keep searching
 def find_best_chunk_strategy(input_filename):
@@ -116,7 +128,7 @@ def find_best_chunk_strategy(input_filename):
                 reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, positions)
 
                 compressed_filename = f"{input_filename}.compressed.bin"
-                compressed_size, first_attempt = compress_with_paq(reversed_filename, compressed_filename, chunk_size, positions, previous_size, file_size, first_attempt)
+                compressed_size, first_attempt = compress_with_zlib(reversed_filename, compressed_filename, chunk_size, positions, previous_size, file_size, first_attempt)
 
                 if compressed_size < previous_size:
                     previous_size = compressed_size
@@ -125,7 +137,7 @@ def find_best_chunk_strategy(input_filename):
                     best_compression_ratio = compressed_size / file_size
                     best_count += 1
 
-                    #print(f"Improved compression with chunk size {chunk_size} and {len(positions)} reversed positions. Compression ratio: {best_compression_ratio:.4f}")
+                    print(f"Improved compression with chunk size {chunk_size} and {len(positions)} reversed positions. Compression ratio: {best_compression_ratio:.4f}")
 
 # Main function
 def main():
@@ -153,7 +165,7 @@ def main():
         if not os.path.exists(compressed_filename):
             print(f"Error: Compressed file {compressed_filename} not found!")
             return
-        decompress_and_restore_paq(compressed_filename)
+        decompress_and_restore_zlib(compressed_filename)
 
 if __name__ == "__main__":
     main()
