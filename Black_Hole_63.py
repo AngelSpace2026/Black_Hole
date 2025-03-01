@@ -43,12 +43,16 @@ def compress_with_paq(reversed_filename, compressed_filename, chunk_size, positi
     if first_attempt:
         # For the first attempt, we always overwrite the file, even if it's larger or equal
         with open(compressed_filename, 'wb') as outfile:
+            # Remove 006300 sequence from the compressed data
+            compressed_data = compressed_data.replace(b'\x00\x63\x00', b'')
             outfile.write(compressed_data)
         first_attempt = False  # After first attempt, it is no longer the first one
         return compressed_size, first_attempt
     elif compressed_size < previous_size:
         # After the first attempt, we only save the smaller file
         with open(compressed_filename, 'wb') as outfile:
+            # Remove 006300 sequence from the compressed data
+            compressed_data = compressed_data.replace(b'\x00\x63\x00', b'')
             outfile.write(compressed_data)
         previous_size = compressed_size  # Update the previous size with the new compressed size
         
@@ -85,7 +89,8 @@ def decompress_and_restore_paq(compressed_filename):
 
     # If the header is correct, proceed with decompression
     with open(compressed_filename, 'rb') as infile:
-        compressed_data = infile.read()
+        # Add the 006300 sequence before reading the rest of the compressed data
+        compressed_data = b'\x00\x63\x00' + infile.read()
 
     # Decompress the data
     decompressed_data = paq.decompress(compressed_data)
