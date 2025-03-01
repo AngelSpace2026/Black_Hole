@@ -117,7 +117,7 @@ def decompress_and_restore_paq(compressed_filename):
     with open(restored_filename, 'wb') as outfile:
         outfile.write(restored_data)
 
-# Find the best chunk strategy and keep searching infinitely
+# Find the best chunk strategy and keep searching infinitely (for compression)
 def find_best_chunk_strategy(input_filename):
     file_size = os.path.getsize(input_filename)
     best_chunk_size = 1
@@ -129,7 +129,7 @@ def find_best_chunk_strategy(input_filename):
     first_attempt = True  # Flag to track if it's the first attempt
 
     while True:  # Infinite loop to keep improving
-        for chunk_size in range(1, 256):
+        for chunk_size in range(1, 2**31):  # Modify the range to 1 to 2^31
             max_positions = file_size // chunk_size
             if max_positions > 0:
                 positions_count = random.randint(1, min(max_positions, 64))
