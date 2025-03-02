@@ -2,62 +2,47 @@ import os
 import random
 import struct
 import math
-import paq  # Assuming paq is a valid module for compression
+import paq
+
+# Function to generate chunk positions based on root values
+def generate_root_positions(file_size, num_positions):
+    # Generate root-based positions (whole numbers) between 1 and file size
+    positions = []
+    for _ in range(num_positions):
+        x = random.randint(1, 64)
+        y = random.randint(1, 64)
+        z = int(math.sqrt(x * y))  # Generate a root-based number
+        position = z % (file_size // 2)  # Ensure the position is within valid file size
+        positions.append(position)
+    return positions
 
 # Reverse chunks at specified positions
-def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, num_reversals):
+def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, positions):
     with open(input_filename, 'rb') as infile, open(reversed_filename, 'wb') as outfile:
         file_size = os.path.getsize(input_filename)
         total_chunks = (file_size + chunk_size - 1) // chunk_size  # Ensure all chunks are counted
 
-        # Perform chunk reversal num_reversals times
-        chunks = [infile.read(chunk_size) for _ in range(total_chunks)]
-        for _ in range(num_reversals):
-            # Randomly reverse chunks
-            positions = random.sample(range(total_chunks), total_chunks // 2)
-            for pos in positions:
-                chunks[pos] = chunks[pos][::-1]
-
-        # Write the potentially reversed chunks
-        for chunk in chunks:
+        for i in range(total_chunks):
+            chunk = infile.read(chunk_size)
+            if i in positions:
+                chunk = chunk[::-1]  # Reverse chunk
             outfile.write(chunk)
 
-    return total_chunks, num_reversals
-
-# Apply a root transformation on the chunks (e.g., square root for each byte)
-def apply_root_to_chunks(input_filename, output_filename, chunk_size, num_roots):
-    with open(input_filename, 'rb') as infile, open(output_filename, 'wb') as outfile:
-        file_size = os.path.getsize(input_filename)
-        total_chunks = (file_size + chunk_size - 1) // chunk_size  # Ensure all chunks are counted
-
-        chunks = [infile.read(chunk_size) for _ in range(total_chunks)]
-        for _ in range(num_roots):
-            # Apply root transformation on chunks, e.g., taking the square root of each byte in the chunk
-            positions = random.sample(range(total_chunks), total_chunks // 2)  # Random chunk positions for transformation
-            for pos in positions:
-                chunk = chunks[pos]
-                transformed_chunk = bytearray([int(math.sqrt(b)) for b in chunk])  # Square root of each byte
-                chunks[pos] = transformed_chunk
-
-        # Write the transformed chunks
-        for chunk in chunks:
-            outfile.write(chunk)
-
-    return total_chunks, num_roots
+    return positions
 
 # Compress using PAQ with metadata
-def compress_with_paq(modified_filename, compressed_filename, chunk_size, total_chunks, num_transformations, previous_size, original_size, first_attempt):
-    with open(modified_filename, 'rb') as infile:
-        modified_data = infile.read()
+def compress_with_paq(reversed_filename, compressed_filename, chunk_size, positions, previous_size, original_size, first_attempt):
+    with open(reversed_filename, 'rb') as infile:
+        reversed_data = infile.read()
 
     # Pack metadata
     metadata = struct.pack(">Q", original_size)  # Store original file size
     metadata += struct.pack(">I", chunk_size)  # Chunk size
-    metadata += struct.pack(">I", total_chunks)  # Total chunks
-    metadata += struct.pack(">I", num_transformations)  # Number of transformation operations (roots)
+    metadata += struct.pack(">I", len(positions))  # Number of positions
+    metadata += struct.pack(f">{len(positions)}I", *positions)  # Store reversed positions
 
     # Compress with PAQ
-    compressed_data = paq.compress(metadata + modified_data)
+    compressed_data = paq.compress(metadata + reversed_data)
     compressed_size = len(compressed_data)
 
     if first_attempt or compressed_size < previous_size:
@@ -80,17 +65,16 @@ def decompress_and_restore_paq(compressed_filename):
     # Extract metadata
     original_size = struct.unpack(">Q", decompressed_data[:8])[0]
     chunk_size = struct.unpack(">I", decompressed_data[8:12])[0]
-    total_chunks = struct.unpack(">I", decompressed_data[12:16])[0]
-    num_transformations = struct.unpack(">I", decompressed_data[16:20])[0]
+    num_positions = struct.unpack(">I", decompressed_data[12:16])[0]
+    positions = list(struct.unpack(f">{num_positions}I", decompressed_data[16:16 + num_positions * 4]))
 
     # Restore original chunks
-    chunked_data = decompressed_data[20:]
+    chunked_data = decompressed_data[16 + num_positions * 4:]
+    total_chunks = (len(chunked_data) + chunk_size - 1) // chunk_size
     restored_chunks = [chunked_data[i * chunk_size:(i + 1) * chunk_size] for i in range(total_chunks)]
 
-    # Reverse the chunks according to the number of reversals (if applicable)
-    for _ in range(num_transformations):
-        positions = random.sample(range(total_chunks), total_chunks // 2)
-        for pos in positions:
+    for pos in positions:
+        if 0 <= pos < len(restored_chunks):
             restored_chunks[pos] = restored_chunks[pos][::-1]
 
     restored_data = b"".join(restored_chunks)[:original_size]
@@ -108,15 +92,18 @@ def find_best_chunk_strategy(input_filename):
     first_attempt = True
 
     while True:  # Infinite loop to keep improving
-        chunk_size = random.randint(1, file_size)  # Choose chunk size randomly from 1 to the file size
-        num_transformations = random.randint(1, 64)  # Number of root operations to try (1 to 64)
-        
-        # Apply root transformation and then compress
-        modified_filename = f"{input_filename}.modified.bin"
-        total_chunks, num_transformations = apply_root_to_chunks(input_filename, modified_filename, chunk_size, num_transformations)
+        chunk_size = random.randint(1, min(file_size, 2**31))
+        max_positions = file_size // chunk_size
+        num_positions = random.randint(1, min(64, max_positions)) if max_positions > 0 else 1
+
+        # Generate random root-based positions
+        positions = generate_root_positions(file_size, num_positions)
+
+        reversed_filename = f"{input_filename}.reversed.bin"
+        reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, positions)
 
         compressed_filename = f"{input_filename}.compressed.bin"
-        previous_size, first_attempt = compress_with_paq(modified_filename, compressed_filename, chunk_size, total_chunks, num_transformations, previous_size, file_size, first_attempt)
+        previous_size, first_attempt = compress_with_paq(reversed_filename, compressed_filename, chunk_size, positions, previous_size, file_size, first_attempt)
 
 # Main function
 def main():
