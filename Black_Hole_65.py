@@ -13,6 +13,9 @@ def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, n
     with open(input_filename, 'rb') as infile:
         data = infile.read()
 
+    # Delete the first three bytes (006300)
+    data = data[3:]  # Remove first three bytes
+
     chunked_data = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]  
 
     if len(chunked_data[-1]) < chunk_size:  
@@ -79,6 +82,9 @@ def decompress_and_restore_paq(compressed_filename):
 
     # Trim the restored data to match the original file size
     restored_data = restored_data[:original_size]
+
+    # Add the 006300 hex sequence back at the start during extraction
+    restored_data = b'\x00\x63\x00' + restored_data
 
     restored_filename = compressed_filename.replace('.compressed.bin', '')  
 
