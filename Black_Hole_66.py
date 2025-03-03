@@ -33,9 +33,8 @@ def compress_with_paq(reversed_filename, compressed_filename, chunk_size, positi
     metadata += struct.pack(">I", len(positions))  
     metadata += struct.pack(f">{len(positions)}I", *positions)  
 
-    # Store "times" in 3 bytes (ensure within range 1 to 2^24)
-    times = max(1, min(times, 2**24 - 1))  # Clamp between 1 and 2^24 - 1
-    metadata += times.to_bytes(3, 'big')  # Convert to 3-byte representation
+    # Store "times" in 3 bytes
+    metadata += times.to_bytes(3, 'big')  
 
     compressed_data = paq.compress(metadata + reversed_data)  
     compressed_size = len(compressed_data)
@@ -45,28 +44,27 @@ def compress_with_paq(reversed_filename, compressed_filename, chunk_size, positi
 
     return compressed_size
 
-# Find best strategy checking all "times" variations from 1 to 2^24
-def find_best_chunk_strategy(input_filename):
+# Find best chunk strategy for given "times" value
+def find_best_chunk_strategy(input_filename, times):
     file_size = os.path.getsize(input_filename)
     best_compression_ratio = float('inf')
     best_compressed_filename = input_filename + ".compressed.bin"
     reversed_filename = f"{input_filename}.reversed.bin"
     previous_size = 10**12  
 
-    for times in range(1, min(2**24, file_size + 1)):  # Times from 1 to min(2^24, file_size)
-        for chunk_size in range(1, file_size // times + 1):  
-            max_positions = file_size // chunk_size  
-            if max_positions > 0:  
-                positions_count = random.randint(1, min(max_positions, 64))  
-                positions = [i * (2**31) // file_size for i in range(positions_count)]  
+    for chunk_size in range(1, file_size // times + 1):  
+        max_positions = file_size // chunk_size  
+        if max_positions > 0:  
+            positions_count = random.randint(1, min(max_positions, 64))  
+            positions = [i * (2**31) // file_size for i in range(positions_count)]  
 
-                reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, positions_count)  
-                compressed_size = compress_with_paq(reversed_filename, best_compressed_filename, chunk_size, positions, file_size, times)  
+            reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, positions_count)  
+            compressed_size = compress_with_paq(reversed_filename, best_compressed_filename, chunk_size, positions, file_size, times)  
 
-                if compressed_size < previous_size:
-                    previous_size = compressed_size
-                    best_compression_ratio = compressed_size / file_size
-                    print(f"Times: {times}, Chunk Size: {chunk_size}, Compressed Size: {compressed_size}, Ratio: {best_compression_ratio:.4f}")
+            if compressed_size < previous_size:
+                previous_size = compressed_size
+                best_compression_ratio = compressed_size / file_size
+                print(f"Times: {times}, Chunk Size: {chunk_size}, Compressed Size: {compressed_size}, Ratio: {best_compression_ratio:.4f}")
 
     return best_compressed_filename
 
@@ -125,7 +123,19 @@ def main():
         if not os.path.exists(input_filename):  
             print(f"Error: File {input_filename} not found!")  
             return  
-        find_best_chunk_strategy(input_filename)  
+
+        # Ask user for "times" value (1 to 2^24)
+        while True:
+            try:
+                times = int(input(f"Enter 'times' value (1 to {2**24}): "))  
+                if 1 <= times <= 2**24:  
+                    break  
+                else:  
+                    print(f"Error: Please enter a number between 1 and {2**24}.")  
+            except ValueError:
+                print("Error: Invalid input. Please enter a valid number.")  
+
+        find_best_chunk_strategy(input_filename, times)  
 
     elif mode == 2:  
         compressed_filename_base = input("Enter the base name of the compressed file to extract (without .compressed.bin): ")  
