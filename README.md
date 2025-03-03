@@ -1,5 +1,5 @@
 # Black_Hole-1-45
-
+Black_Hole 66 01b for zeros
 Black Hole 57-65 algorithm
 57-63 use reverse
 64 every that here I explained
