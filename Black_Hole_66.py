@@ -33,8 +33,9 @@ def compress_with_paq(reversed_filename, compressed_filename, chunk_size, positi
     metadata += struct.pack(">I", len(positions))  
     metadata += struct.pack(f">{len(positions)}I", *positions)  
 
-    # Store "times" in 3 bytes  
-    metadata += struct.pack(">I", times)[1:]  # Take last 3 bytes of a 4-byte integer
+    # Store "times" in 3 bytes (ensure within range 1 to 2^24)
+    times = max(1, min(times, 2**24 - 1))  # Clamp between 1 and 2^24 - 1
+    metadata += times.to_bytes(3, 'big')  # Convert to 3-byte representation
 
     compressed_data = paq.compress(metadata + reversed_data)  
     compressed_size = len(compressed_data)
@@ -44,7 +45,7 @@ def compress_with_paq(reversed_filename, compressed_filename, chunk_size, positi
 
     return compressed_size
 
-# Find best strategy checking all "times" variations from 1 to 24
+# Find best strategy checking all "times" variations from 1 to 2^24
 def find_best_chunk_strategy(input_filename):
     file_size = os.path.getsize(input_filename)
     best_compression_ratio = float('inf')
@@ -52,7 +53,7 @@ def find_best_chunk_strategy(input_filename):
     reversed_filename = f"{input_filename}.reversed.bin"
     previous_size = 10**12  
 
-    for times in range(1, 25):  # Try times from 1 to 24
+    for times in range(1, min(2**24, file_size + 1)):  # Times from 1 to min(2^24, file_size)
         for chunk_size in range(1, file_size // times + 1):  
             max_positions = file_size // chunk_size  
             if max_positions > 0:  
@@ -85,7 +86,7 @@ def decompress_and_restore_paq(compressed_filename):
     positions = list(struct.unpack(f">{num_positions}I", decompressed_data[16:16 + num_positions * 4]))  
 
     # Extract "times" from 3-byte storage
-    times = struct.unpack(">I", b'\x00' + decompressed_data[16 + num_positions * 4: 16 + num_positions * 4 + 3])[0]  
+    times = int.from_bytes(decompressed_data[16 + num_positions * 4: 16 + num_positions * 4 + 3], 'big')  
 
     chunked_data = decompressed_data[16 + num_positions * 4 + 3:]  
 
