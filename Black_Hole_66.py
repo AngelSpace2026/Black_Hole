@@ -155,9 +155,6 @@ def find_best_chunk_strategy(input_filename):
                 best_compression_ratio = compressed_size / file_size
                 print(f"Improved compression: {compressed_size} bytes, Compression ratio: {compressed_size / file_size:.4f}")
 
-            print("Sleeping for 3 seconds...")  # Print message before sleeping
-            time.sleep(3)  # Sleep for 3 seconds after each compression attempt
-
     return best_compressed_filename
 
 # Main function
