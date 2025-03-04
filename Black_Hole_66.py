@@ -1,7 +1,7 @@
 import os
 import random
 import struct
-import zstd
+import paq
 import tqdm
 import time
 
@@ -41,7 +41,7 @@ def compress_with_paq(reversed_filename, compressed_filename, chunk_size, positi
     metadata += struct.pack(f">{len(positions)}I", *positions)  # Positions (as a list of unsigned ints)
 
     # Compress the file
-    compressed_data = zstd.compress(metadata + reversed_data)
+    compressed_data = paq.compress(metadata + reversed_data)
 
     # Get the current compressed size
     compressed_size = len(compressed_data)
@@ -75,13 +75,18 @@ def decompress_and_restore_paq(compressed_filename):
     # Open the compressed file and check its first 3 bytes
     with open(compressed_filename, 'rb') as infile:
         header_bytes = infile.read(3)
-        
+
+        # Check if the first 3 bytes are the sequence 0x006300 (for extraction only)
+        if header_bytes != b'\x00\x63\x00':
+            print(f"Error: The first bytes of the file are not the expected 0x006300, found: {header_bytes.hex()}")
+            return
+
     # If the header is correct, proceed with decompression
     with open(compressed_filename, 'rb') as infile:
         compressed_data = infile.read()
 
     # Decompress the data
-    decompressed_data = zstd.decompress(compressed_data)
+    decompressed_data = paq.decompress(compressed_data)
 
     # Extract metadata
     original_size = struct.unpack(">Q", decompressed_data[:8])[0]  # Original size (from last compression)
