@@ -1,3 +1,4 @@
+import os
 import random
 import struct
 import zstd
@@ -189,15 +190,6 @@ def main():
 
         # Check if the compressed file exists
         if not os.path.exists(compressed_filename):
-            print(f"Error: Compressed file {compressed_filename} not found!")
-            return
-
-        # Perform the extraction (restoring) process
-        decompress_and_restore_paq(compressed_filename)
-
-if __name__ == "__main__":
-    main()
-me):
             print(f"Error: Compressed file {compressed_filename} not found!")
             return
 
