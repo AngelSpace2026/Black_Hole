@@ -51,6 +51,7 @@ def find_best_chunk_strategy(input_filename, times):
     best_compressed_filename = input_filename + ".compressed.bin"
     reversed_filename = f"{input_filename}.reversed.bin"
     previous_size = 10**12  
+    best_times = times  # Track best times value
 
     for chunk_size in range(1, file_size // times + 1):  
         max_positions = file_size // chunk_size  
@@ -61,10 +62,15 @@ def find_best_chunk_strategy(input_filename, times):
             reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, positions_count)  
             compressed_size = compress_with_paq(reversed_filename, best_compressed_filename, chunk_size, positions, file_size, times)  
 
+            # Keep track of the best compression ratio
             if compressed_size < previous_size:
                 previous_size = compressed_size
                 best_compression_ratio = compressed_size / file_size
+                best_times = times
                 print(f"Times: {times}, Chunk Size: {chunk_size}, Compressed Size: {compressed_size}, Ratio: {best_compression_ratio:.4f}")
+
+    # Clean up intermediate files after processing
+    os.remove(reversed_filename)
 
     return best_compressed_filename
 
@@ -104,6 +110,9 @@ def decompress_and_restore_paq(compressed_filename):
 
     print(f"Decompressed: {restored_filename}, Size: {len(restored_data)}, Times: {times}")
 
+    # Delete the compressed file after extraction
+    os.remove(compressed_filename)
+
 # Main function
 def main():
     print("Created by Jurijus Pacalovas.")
@@ -135,7 +144,10 @@ def main():
             except ValueError:
                 print("Error: Invalid input. Please enter a valid number.")  
 
-        find_best_chunk_strategy(input_filename, times)  
+        best_compressed_filename = find_best_chunk_strategy(input_filename, times)  
+
+        # Delete all files except the best compressed file after compression
+        print(f"Best compressed file: {best_compressed_filename}")
 
     elif mode == 2:  
         compressed_filename_base = input("Enter the base name of the compressed file to extract (without .compressed.bin): ")  
