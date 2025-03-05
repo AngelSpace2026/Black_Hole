@@ -8,7 +8,7 @@ Reverse:
 Not negative
 Reverse x,y 1,2,3-size of file numbers chunk the time different numbers 1-size of file numbers e.g x,y,z a,b,c,d the best save and extract, repeats times reverse from 1-64 numbers and Root.
 Between 1-2**31 reverse, Paq 
-Compress put paq to Random 1-64 Whole numbers Root save
+Compress put paq to Random 1-64 Whole numbers Root save 66,67 use minus
 
 #constant Jurijus Pacalovas 
 
