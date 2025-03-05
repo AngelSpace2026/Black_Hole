@@ -1,6 +1,6 @@
 # Black_Hole-1-45
 Black_Hole 66 01b for zeros
-Black Hole 57-65 algorithm
+Black Hole 57-67 64 bits algorithm
 57-63 use reverse
 64 every that here I explained
 I use algorithm paq and reverse many times compress minus random 1-255, reverse times times compress 1-255
