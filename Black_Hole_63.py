@@ -8,10 +8,10 @@ def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, p
     with open(input_filename, 'rb') as infile:
         data = infile.read()
 
-    # Split into chunks
+    # Split into chunks (chunk size is always 1)
     chunked_data = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
 
-    # Add padding if needed
+    # Add padding if needed (though chunk size is 1, this is kept for completeness)
     if len(chunked_data[-1]) < chunk_size:
         chunked_data[-1] += b'\x00' * (chunk_size - len(chunked_data[-1]))
 
@@ -120,7 +120,7 @@ def decompress_and_restore_paq(compressed_filename):
 # Find the best chunk strategy and keep searching infinitely (for compression)
 def find_best_chunk_strategy(input_filename):
     file_size = os.path.getsize(input_filename)
-    best_chunk_size = 1
+    best_chunk_size = 1  # Fixed chunk size to 1
     best_positions = []
     best_compression_ratio = float('inf')
     best_count = 0
@@ -129,29 +129,28 @@ def find_best_chunk_strategy(input_filename):
     first_attempt = True  # Flag to track if it's the first attempt
 
     while True:  # Infinite loop to keep improving
-        for chunk_size in range(1, 2**31):  # Modify the range to 1 to 2^31
-            max_positions = file_size // chunk_size
-            if max_positions > 0:
-                positions_count = random.randint(1, min(max_positions, 64))
-                positions = random.sample(range(max_positions), positions_count)
+        max_positions = file_size // best_chunk_size  # Only need to calculate once since chunk_size is 1
+        if max_positions > 0:
+            positions_count = random.randint(1, min(max_positions, 64))
+            positions = random.sample(range(max_positions), positions_count)
 
-                reversed_filename = f"{input_filename}.reversed.bin"
-                reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, positions)
+            reversed_filename = f"{input_filename}.reversed.bin"
+            reverse_chunks_at_positions(input_filename, reversed_filename, best_chunk_size, positions)
 
-                compressed_filename = f"{input_filename}.compressed.bin"
-                compressed_size, first_attempt = compress_with_paq(reversed_filename, compressed_filename, chunk_size, positions, previous_size, file_size, first_attempt)
+            compressed_filename = f"{input_filename}.compressed.bin"
+            compressed_size, first_attempt = compress_with_paq(reversed_filename, compressed_filename, best_chunk_size, positions, previous_size, file_size, first_attempt)
 
-                if compressed_size < previous_size:
-                    # Update the best values when a better compression ratio is found
-                    previous_size = compressed_size
-                    best_chunk_size = chunk_size
-                    best_positions = positions
-                    best_compression_ratio = compressed_size / file_size
-                    best_count += 1
+            if compressed_size < previous_size:
+                # Update the best values when a better compression ratio is found
+                previous_size = compressed_size
+                best_chunk_size = best_chunk_size  # Always 1, no need to update
+                best_positions = positions
+                best_compression_ratio = compressed_size / file_size
+                best_count += 1
 
-                    # Print improved compression details
-                    print(f"Improved compression with chunk size {chunk_size} and {len(positions)} reversed positions.")
-                    print(f"Compression size: {compressed_size} bytes, Compression ratio: {compressed_size / file_size:.4f}")
+                # Print improved compression details
+                print(f"Improved compression with chunk size {best_chunk_size} and {len(positions)} reversed positions.")
+                print(f"Compression size: {compressed_size} bytes, Compression ratio: {compressed_size / file_size:.4f}")
 
 # Main function
 def main():

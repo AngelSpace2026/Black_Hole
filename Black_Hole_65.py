@@ -136,12 +136,15 @@ def find_best_chunk_strategy(input_filename):
 
     while True:  # Infinite loop to keep improving
         for chunk_size in range(1, 256):  # Modify the range to 1 to 256
+            print(f"Trying chunk size: {chunk_size}")  # Debugging output for chunk size
             max_positions = file_size // chunk_size
             if max_positions > 0:
                 positions_count = random.randint(1, min(max_positions, 64))
                 
                 # Calculate positions with spacing between reversals
                 positions = [i * (2**31) // file_size for i in range(positions_count)]
+
+                print(f"Positions selected: {positions}")  # Debugging output for positions
 
                 reversed_filename = f"{input_filename}.reversed.bin"
                 reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, positions_count)
