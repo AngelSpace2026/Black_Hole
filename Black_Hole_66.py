@@ -52,7 +52,7 @@ def find_best_chunk_strategy(input_filename):
 
     while True:  # Infinite loop
         times = random.randint(1, 2**24)  # Random times each iteration
-        chunk_size = random.randint(1, max(1, file_size // times))  # Random chunk size
+        chunk_size = 1  # Set chunk size to always be 1
         max_positions = file_size // chunk_size
 
         if max_positions > 0:
