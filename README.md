@@ -1,5 +1,5 @@
 # Black_Hole-1-45 
-must be Python 3.7.4
+Must be Python 3.7.4
 
 Black_Hole 66 01b for zeros
 Black Hole 57-67 64 bits algorithm
