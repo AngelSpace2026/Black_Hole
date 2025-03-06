@@ -1,16 +1,10 @@
 # Black_Hole-1-45 
 Must be Python 3.7.4
 
-Black_Hole 66 01b for zeros
-Black Hole 57-67 64 bits algorithm
-57-63 use reverse
-64 every that here I explained
-I use algorithm paq and reverse many times compress minus random 1-255, reverse times times compress 1-255
-Reverse:
-Not negative
-Reverse x,y 1,2,3-size of file numbers chunk the time different numbers 1-size of file numbers e.g x,y,z a,b,c,d the best save and extract, repeats times reverse from 1-64 numbers and Root.
-Between 1-2**31 reverse, Paq 
-Compress put paq to Random 1-64 Whole numbers Root save 66,67 use minus
+Black_Hole 67
+paq
+reverse many times compress minus random 1-255, reverse times times compress 1-255 Reverse: Not negative Reverse x,y 1,2,3-size of file numbers chunk the time different numbers 1-size of file numbers e.g x,y,z a,b,c,d the best save and extract, repeats times reverse from 1-64 numbers and Root. Between 1-2**31 reverse, Paq Compress put paq to Random 1-64 
+Minus 1-2**255 random save depends minus bytes and 1byte 1-255 for bytes
 
 #constant Jurijus Pacalovas 
 
