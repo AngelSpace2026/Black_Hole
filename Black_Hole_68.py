@@ -96,7 +96,7 @@ def decompress_and_restore_paq(compressed_filename):
 
     print(f"Decompression complete. Restored file size: {len(restored_data)} bytes")
 
-# Find best chunk strategy (infinite loop)
+# Find best chunk strategy (10,000 iterations)
 def find_best_chunk_strategy(input_filename):
     file_size = os.path.getsize(input_filename)
     best_compression_ratio = float('inf')
@@ -104,7 +104,7 @@ def find_best_chunk_strategy(input_filename):
     prev_size = 10**12  
     first_attempt = True  
 
-    while True:
+    for iteration in range(1, 10_001):  # Runs exactly 10,000 times
         for chunk_size in range(1, 256):
             max_positions = file_size // chunk_size
             if max_positions > 0:
@@ -120,7 +120,10 @@ def find_best_chunk_strategy(input_filename):
                 if compressed_size < prev_size:
                     prev_size = compressed_size
                     best_compression_ratio = compressed_size / file_size
-                    print(f"New best compression: {compressed_size} bytes. Ratio: {best_compression_ratio:.4f}")
+                    print(f"Iteration {iteration}: New best compression: {compressed_size} bytes. Ratio: {best_compression_ratio:.4f}")
+
+        if iteration % 1000 == 0:
+            print(f"Progress: {iteration}/10,000 iterations completed.")
 
 # Main function
 def main():
