@@ -1,4 +1,5 @@
-# Black_Hole-1-45
+# Black_Hole-1-45 
+Python 3.7.4 must be
 Black_Hole 66 01b for zeros
 Black Hole 57-67 64 bits algorithm
 57-63 use reverse
