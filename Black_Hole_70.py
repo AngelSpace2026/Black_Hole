@@ -7,30 +7,25 @@ import paq
 def apply_minus_operation(value):
     if value <= 0:
         return value + (2**255 - 1)
-    elif value <= (2**24 - 1):
-        # Add 3 bytes if the value is within the range -2**24+1 to -1
+    elif value <= (2**24 - 1):  # Add 3 bytes if the value is within the range -2**24+1 to -1
         return value + 3
-    else:
-        # Add 1 byte for values within the range 1 - 255
+    else:  # Add 1 byte for values within the range 1 - 255
         return value + 1
 
 # Manage leading zeros and minimize byte usage for values in the range 1 to 255 bytes
 def manage_leading_zeros(input_data):
-    """
-    This function processes the input byte data to handle leading zeros and ensures that values 
-    within the 1-255 byte range are minimized to a single byte.
-    """
+    """ This function processes the input byte data to handle leading zeros and ensures that values within the 1-255 byte range are minimized to a single byte. """
     # Ensure input_data is a byte object
     if not isinstance(input_data, bytes):
         raise ValueError("Input data must be of type 'bytes'")
 
     # Strip leading zeros
     stripped_data = input_data.lstrip(b'\x00')
-
+    
     # If the stripped data is empty (i.e., all were zeros), keep a single byte
     if not stripped_data:
         stripped_data = b'\x00'
-
+    
     # Ensure that values in the range 1 to 255 bytes are minimized to 1 byte if possible
     if 1 <= len(stripped_data) <= 255:
         return stripped_data[:1]  # Keep only the first byte if within the range 1-255
@@ -44,7 +39,7 @@ def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, n
 
     # Split into chunks
     chunked_data = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
-    
+
     # Add padding if needed
     if len(chunked_data[-1]) < chunk_size:
         chunked_data[-1] += b'\x00' * (chunk_size - len(chunked_data[-1]))
@@ -107,9 +102,7 @@ def decompress_and_restore_paq(compressed_filename):
 
     # Open the compressed file and check its first 3 bytes
     with open(compressed_filename, 'rb') as infile:
-        header_bytes = infile.read(3)
-        
-        # Check if the first 3 bytes are the sequence 0x006300 (for extraction only)
+        header_bytes = infile.read(3)  # Check if the first 3 bytes are the sequence 0x006300 (for extraction only)
         if header_bytes != b'\x00\x63\x00':
             print(f"Error: The first bytes of the file are not the expected 0x006300, found: {header_bytes.hex()}")
             return
