@@ -3,16 +3,6 @@ import random
 import struct
 import paq
 
-# Fermat transformation inspired by Fermat's Last Theorem.
-def fermat_transform(x, y, n, p):
-    """
-    Apply a transformation inspired by Fermat's Last Theorem:
-    x^n + y^n ≡ z^n (mod p), where p is a prime number.
-    This function will apply modular arithmetic to the values.
-    """
-    z = (pow(x, n, p) + pow(y, n, p)) % p  # z^n mod p
-    return z
-
 # Apply the minus operation for modifying values
 def apply_minus_operation(value):
     # The function modifies the given value by applying a "minus" operation
