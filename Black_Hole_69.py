@@ -4,30 +4,30 @@ import struct
 import paq
 
 # Theorema Fermat function that applies transformations to values based on Fermat's Little Theorem.
-def Root_theorema_ferma(value):
+def Root_theorema_ferma(value, iterations=255):
     """
-    The Root Theorem Fermat function that applies transformations based on Fermat's Little Theorem
-    to modify the given value. The transformation is designed to apply a series of steps to the value
-    to simulate the root operation and modify the value in ways that align with mathematical principles 
-    for optimization and cryptographic-style transformations.
+    Root Theorem Fermat function modified to apply transformations based on Fermat's Little Theorem,
+    iterating from 1 to 255 times and adjusting the value with an additional byte added each time.
     """
-    # Apply a square root transformation to the value
-    transformed_value = value ** 0.5
-    
-    # Apply Fermat's Little Theorem based modulo operation
-    if transformed_value > 1:
-        # If the transformed value is greater than 1, perform modulo 2 operation based on Fermat's Theorem
-        transformed_value = transformed_value % 2
+    transformed_value = value
 
-    # Further modification based on the value
-    if transformed_value > 0:
-        # If the transformed value is greater than 0, apply the transformation and adjust the value
-        transformed_value = transformed_value * 3 - 1
-    else:
-        # Otherwise, apply an alternative transformation to the value
-        transformed_value = transformed_value * 2 + 1
+    for _ in range(iterations):
+        # Apply the square root transformation
+        transformed_value = transformed_value ** 0.5
+        
+        # Apply Fermat's Little Theorem based modulo operation
+        if transformed_value > 1:
+            transformed_value = transformed_value % 2
+        
+        # Modify the value based on the transformed result
+        if transformed_value > 0:
+            transformed_value = transformed_value * 3 - 1
+        else:
+            transformed_value = transformed_value * 2 + 1
+        
+        # Add 1 byte (to increase the value by a byte) after each iteration
+        transformed_value = int(transformed_value) + 1  # Add 1 byte
 
-    # Return the final transformed value
     return transformed_value
 
 
