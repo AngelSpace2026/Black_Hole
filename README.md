@@ -1,7 +1,7 @@
 # Black_Hole-1-45 
 Must be Python 3.7.4
 
-Black_Hole 63-70
+Black_Hole 63-69
 paq
 reverse many times compress minus random 1-255, reverse times times compress 1-255 Reverse: Not negative Reverse x,y 1,2,3-size of file numbers chunk the time different numbers 1-size of file numbers e.g x,y,z a,b,c,d the best save and extract, repeats times reverse from 1-64 numbers. Between 1-2**31 reverse, Paq Compress put paq to Random 1-64 
 Minus 1-2**255 random save depends minus bytes and 1byte 1-255 for bytes after Whole numbers Root like Root 1-255 times Theorema Ferma then paq 10000 iteration 
