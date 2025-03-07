@@ -26,6 +26,18 @@ def manage_leading_zeros(input_data):
     if not stripped_data:
         stripped_data = b'\x00'
     
+    # Evaluate the bit structure of stripped data: check for leading ones and zeros
+    leading_zeros = 0
+    for byte in stripped_data:
+        if byte == 0:
+            leading_zeros += 8
+        else:
+            # Calculate the number of leading zeros in the current byte
+            leading_zeros += (8 - len(bin(byte)) + bin(byte).index('1') - 2) if byte != 0 else 0
+    
+    # Choose a strategy: Here, the zero-bit length can influence the decision of whether to compress further or select a better encoding
+    print(f"Leading zeros count: {leading_zeros} bits")
+
     # Ensure that values in the range 1 to 255 bytes are minimized to 1 byte if possible
     if 1 <= len(stripped_data) <= 255:
         return stripped_data[:1]  # Keep only the first byte if within the range 1-255
