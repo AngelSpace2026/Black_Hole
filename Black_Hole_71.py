@@ -63,7 +63,7 @@ def reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, n
 
     # Calculate positions with spacing between reversals, using file_size instead of 2**255
     max_position = len(chunked_data)  # Number of chunks
-    positions = [random.randint(1, 2**31) for _ in range(number_of_positions)]  # Random positions between 1 and 2^31
+    positions = [random.randint(1, 2**31) for _ in range(number_of_positions)]  # Random positions between 1 and 2**31
 
     # Reverse specified chunks
     for pos in positions:
@@ -129,7 +129,7 @@ def find_best_chunk_strategy(input_filename):
             if max_positions > 0:
                 positions_count = random.randint(1, min(max_positions, 64))
 
-                # Calculate positions with spacing between reversals, using file_size instead of 2**255
+                # Generate random positions between 1 and 2**31
                 positions = [random.randint(1, 2**31) for _ in range(positions_count)]
 
                 print(f"Positions selected: {positions}")  # Debugging output for positions
@@ -169,13 +169,13 @@ def decompress_and_restore_paq(compressed_filename):
     # Extract the reversed data
     reversed_data = decompressed_data[16 + positions_count * 4:]
 
-    # Split the data into chunks
+    # Reverse the chunks at the specified positions
     chunked_data = [reversed_data[i:i + chunk_size] for i in range(0, len(reversed_data), chunk_size)]
 
     # Reverse back the chunks at the positions
     for pos in positions:
-        if 0 <= pos < len(chunked_data):
-            chunked_data[pos] = chunked_data[pos][::-1]  # Reverse the chunk
+        if pos < len(chunked_data):
+            chunked_data[pos] = chunked_data[pos][::-1]
 
     # Restore the original data by joining the chunks
     restored_data = b"".join(chunked_data)
@@ -207,17 +207,14 @@ def main():
             else:
                 break  # Exit loop if valid input is provided
         except ValueError:
-            print("Error: Invalid input. Please enter a number (1 or 2).")
-
+            print("Error: Invalid input. Please enter 1 for compress or 2 for extract.")
+    
     if mode == 1:
-        input_filename = input("Enter input filename (with extension): ")
+        input_filename = input("Enter the filename to compress: ")
         find_best_chunk_strategy(input_filename)
     elif mode == 2:
-        input_filename = input("Enter the base name of the compressed file to extract (without .compressed.bin): ")
-        compressed_filename = f"{input_filename}.compressed.bin"
-        decompress_and_restore_paq(compressed_filename)
+        compressed_filename = input("Enter the base name of the compressed file to extract (without .compressed.bin): ")
+        decompress_and_restore_paq(compressed_filename + ".compressed.bin")
 
 if __name__ == "__main__":
     main()
-        
-        
