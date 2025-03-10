@@ -39,8 +39,8 @@ def manage_leading_zeros(input_data):
             # Calculate number of leading zeros in the current byte
             leading_zeros += (8 - len(bin(byte)) + bin(byte).index('1') - 2) if byte != 0 else 0
 
-    print(f"Leading zeros count: {leading_zeros} bits")
-    print(f"Leading ones count: {leading_ones} bits")
+    #print(f"Leading zeros count: {leading_zeros} bits")
+    #print(f"Leading ones count: {leading_ones} bits")
 
     # Replace leading zeros and ones with a single byte for efficient compression
     if leading_zeros > 8:
@@ -109,8 +109,8 @@ def compress_with_paq(reversed_filename, compressed_filename, chunk_size, positi
         with open(compressed_filename, 'wb') as outfile:
             outfile.write(compressed_data)
         previous_size = compressed_size
-        print(f"Improved compression with chunk size {chunk_size} and {len(positions)} reversed positions.")
-        print(f"Compression size: {compressed_size} bytes, Compression ratio: {compressed_size / original_size:.4f}")
+        #print(f"Improved compression with chunk size {chunk_size} and {len(positions)} reversed positions.")
+        #print(f"Compression size: {compressed_size} bytes, Compression ratio: {compressed_size / original_size:.4f}")
         return previous_size, first_attempt
     else:
         return previous_size, first_attempt  # Do not overwrite if it's larger
@@ -186,7 +186,7 @@ def find_best_chunk_strategy(input_filename):
 
     while True:  # Infinite loop to keep improving
         for chunk_size in range(1, 256):  # Modify the range to 1 to 256
-            print(f"Trying chunk size: {chunk_size}")  # Debugging output for chunk size
+            #print(f"Trying chunk size: {chunk_size}")  # Debugging output for chunk size
             max_positions = file_size // chunk_size
             if max_positions > 0:
                 positions_count = random.randint(1, min(max_positions, 64))
@@ -194,7 +194,7 @@ def find_best_chunk_strategy(input_filename):
                 # Calculate positions with spacing between reversals
                 positions = [i * (2**31) // file_size for i in range(positions_count)]
 
-                print(f"Positions selected: {positions}")  # Debugging output for positions
+                #print(f"Positions selected: {positions}")  # Debugging output for positions
 
                 reversed_filename = f"{input_filename}.reversed.bin"
                 reverse_chunks_at_positions(input_filename, reversed_filename, chunk_size, positions_count)
@@ -211,8 +211,8 @@ def find_best_chunk_strategy(input_filename):
                     best_count += 1
 
                     # Print improved compression details
-                    print(f"Improved compression with chunk size {chunk_size} and {len(positions)} reversed positions.")
-                    print(f"Compression size: {compressed_size} bytes, Compression ratio: {compressed_size / file_size:.4f}")
+                    #print(f"Improved compression with chunk size {chunk_size} and {len(positions)} reversed positions.")
+                    #print(f"Compression size: {compressed_size} bytes, Compression ratio: {compressed_size / file_size:.4f}")
 
 
 # Main function
