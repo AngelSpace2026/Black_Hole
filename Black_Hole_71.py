@@ -23,7 +23,7 @@ def reverse_chunks_at_positions(input_data, chunk_size, positions):
 
 def compress_with_paq(data, chunk_size, positions, original_size):
     """Compresses data using PAQ and embeds metadata."""
-    metadata = struct.pack(">Q", original_size) + struct.pack(">I", chunk_size) + \
+    metadata = struct.pack(">I", original_size) + struct.pack(">I", chunk_size) + \
                struct.pack(">I", len(positions)) + struct.pack(f">{len(positions)}I", *positions)
     return paq.compress(metadata + data)
 
@@ -33,11 +33,11 @@ def decompress_and_restore_paq(compressed_filename):
         with open(compressed_filename, 'rb') as infile:
             compressed_data = infile.read()
         decompressed_data = paq.decompress(compressed_data)
-        original_size = struct.unpack(">Q", decompressed_data[:8])[0]
-        chunk_size = struct.unpack(">I", decompressed_data[8:12])[0]
-        num_positions = struct.unpack(">I", decompressed_data[12:16])[0]
-        positions = struct.unpack(f">{num_positions}I", decompressed_data[16:16 + num_positions * 4])
-        restored_data = reverse_chunks_at_positions(decompressed_data[16 + num_positions * 4:], chunk_size, positions)
+        original_size = struct.unpack(">I", decompressed_data[:4])[0]
+        chunk_size = struct.unpack(">I", decompressed_data[4:8])[0]
+        num_positions = struct.unpack(">I", decompressed_data[8:12])[0]
+        positions = struct.unpack(f">{num_positions}I", decompressed_data[12:12 + num_positions * 4])
+        restored_data = reverse_chunks_at_positions(decompressed_data[12 + num_positions * 4:], chunk_size, positions)
         restored_data = restored_data[:original_size]
         restored_filename = compressed_filename.replace('.compressed.bin', '')
         with open(restored_filename, 'wb') as outfile:
@@ -96,7 +96,6 @@ def find_best_chunk_strategy(input_filename, max_consecutive_no_improvements=360
             outfile.write(compress_with_paq(reverse_chunks_at_positions(file_data, best_chunk_size, best_positions), best_chunk_size, best_positions, file_size))
     except Exception as e:
         print(f"Error writing compressed file: {e}")
-
 
 def main():
     print("Created by Jurijus Pacalovas.")
