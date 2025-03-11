@@ -90,10 +90,14 @@ def find_best_chunk_strategy(input_filename, max_consecutive_no_improvements=360
     print(f"Positions: {best_positions}")
     print(f"Time taken: {elapsed_time:.2f} seconds")
 
+    # Save only .compressed.bin
     compressed_filename = f"{input_filename}.compressed.bin"
     try:
         with open(compressed_filename, 'wb') as outfile:
-            outfile.write(compress_with_paq(reverse_chunks_at_positions(file_data, best_chunk_size, best_positions), best_chunk_size, best_positions, file_size))
+            # Compress and save directly without saving the reversed data separately
+            compressed_data = compress_with_paq(reverse_chunks_at_positions(file_data, best_chunk_size, best_positions), best_chunk_size, best_positions, file_size)
+            outfile.write(compressed_data)
+        print(f"Compressed file saved as {compressed_filename}")
     except Exception as e:
         print(f"Error writing compressed file: {e}")
 
