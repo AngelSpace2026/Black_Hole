@@ -77,6 +77,8 @@ def find_best_chunk_strategy(input_filename, max_consecutive_no_improvements=360
 
         # Dynamically adjust subtraction based on file size
         subtraction_value = max(1024, len(file_data) // 1024)  # Reasonable adjustment based on file size
+        if len(file_data) > 64:  # Ensuring that the subtraction value is not excessively large
+            subtraction_value = 2**(len(file_data).bit_length() - 1) - 1
         compression_ratio -= subtraction_value
 
         if compression_ratio < best_compression_ratio:
@@ -96,7 +98,7 @@ def find_best_chunk_strategy(input_filename, max_consecutive_no_improvements=360
     print(f"Positions: {best_positions}")
     print(f"Time taken: {elapsed_time:.2f} seconds")
 
-    # Save the compressed data
+    # Save only .compressed.bin
     compressed_filename = f"{input_filename}.compressed.bin"
     try:
         with open(compressed_filename, 'wb') as outfile:
