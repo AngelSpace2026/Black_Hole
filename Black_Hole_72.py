@@ -74,9 +74,9 @@ def find_best_chunk_strategy(input_filename, max_consecutive_no_improvements=360
         compressed_data = compress_with_paq(reversed_data, chunk_size, positions, file_size)
         compression_ratio = len(compressed_data) / file_size
 
-        # Avoid subtracting an excessively large number; instead, subtract a smaller value
-        subtraction_value = 1024  # Use a reasonable value here
-        compression_ratio -= subtraction_value
+        # Apply a smaller constant for subtraction to avoid overflow
+        large_subtraction = 1024  # A reasonable subtraction value
+        compression_ratio -= large_subtraction
 
         if compression_ratio < best_compression_ratio:
             best_compression_ratio = compression_ratio
