@@ -6,7 +6,9 @@ Black_Hole_71 compression software
 Instructions:
 
 Must be Python 3.7.4
+
 pip install cython 
+
 pip install paq
 
 Black_Hole 71
