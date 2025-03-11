@@ -55,14 +55,14 @@ def find_best_chunk_strategy(input_filename, max_consecutive_no_improvements=360
     best_positions = []
     consecutive_no_improvements = 0
     start_time = time.time()
-    
+
     try:
         with open(input_filename, 'rb') as infile:
             file_data = infile.read()
     except FileNotFoundError:
         print(f"Error: Input file '{input_filename}' not found.")
         return
-    
+
     iteration = 0
     while consecutive_no_improvements < max_consecutive_no_improvements and time.time() - start_time < max_time_seconds:
         iteration += 1
@@ -70,24 +70,24 @@ def find_best_chunk_strategy(input_filename, max_consecutive_no_improvements=360
         max_positions = file_size // chunk_size
         num_positions = random.randint(0, min(max_positions, 64))
         positions = sorted(random.sample(range(max_positions), num_positions)) if num_positions > 0 else []
+
         reversed_data = reverse_chunks_at_positions(file_data, chunk_size, positions)
         compressed_data = compress_with_paq(reversed_data, chunk_size, positions, file_size)
         compression_ratio = len(compressed_data) / file_size
 
-        # Apply a smaller constant for subtraction to avoid overflow
-        large_subtraction = 1024  # A reasonable subtraction value
-        compression_ratio -= large_subtraction
+        # Dynamically adjust subtraction based on file size
+        subtraction_value = max(1024, len(file_data) // 1024)  # Reasonable adjustment based on file size
+        compression_ratio -= subtraction_value
 
         if compression_ratio < best_compression_ratio:
             best_compression_ratio = compression_ratio
             best_chunk_size = chunk_size
             best_positions = positions
             consecutive_no_improvements = 0
-            # Print the size of the compressed data (in bytes) after improvement
             print(f"Improved compression: {len(compressed_data)} bytes (chunk size: {chunk_size}, positions: {positions})")
         else:
             consecutive_no_improvements += 1
-    
+
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"\nBest compression achieved after {iteration} iterations (time limit: {max_time_seconds} seconds, no improvement for {max_consecutive_no_improvements} consecutive iterations):")
@@ -96,7 +96,7 @@ def find_best_chunk_strategy(input_filename, max_consecutive_no_improvements=360
     print(f"Positions: {best_positions}")
     print(f"Time taken: {elapsed_time:.2f} seconds")
 
-    # Save only .compressed.bin
+    # Save the compressed data
     compressed_filename = f"{input_filename}.compressed.bin"
     try:
         with open(compressed_filename, 'wb') as outfile:
