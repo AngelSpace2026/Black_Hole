@@ -48,38 +48,32 @@ def decompress_and_restore_paq(compressed_filename):
         print(f"Decompression failed: {e}")
 
 def find_best_chunk_strategy(input_filename, max_consecutive_no_improvements=65535, max_time_seconds=65535):
-    """Finds the best chunk size and reversal positions for compression, with time and consecutive no-improvement limits."""
-    file_size = os.path.getsize(input_filename)
+    """Finds the best chunk size and reversal positions for compression."""
+    try:
+        with open(input_filename, 'rb') as infile:
+            file_data = infile.read()
+            file_size = len(file_data)
+    except FileNotFoundError:
+        print(f"Error: Input file '{input_filename}' not found.")
+        return
+
     best_compression_ratio = float('inf')
     best_chunk_size = 1
     best_positions = []
     consecutive_no_improvements = 0
     start_time = time.time()
 
-    try:
-        with open(input_filename, 'rb') as infile:
-            file_data = infile.read()
-    except FileNotFoundError:
-        print(f"Error: Input file '{input_filename}' not found.")
-        return
-
     iteration = 0
     while consecutive_no_improvements < max_consecutive_no_improvements and time.time() - start_time < max_time_seconds:
         iteration += 1
-        chunk_size = random.randint(1, 256)
+        chunk_size = random.randint(1, min(256, file_size)) # Cap chunk size to file size
         max_positions = file_size // chunk_size
-        num_positions = random.randint(0, min(max_positions, 64))
+        num_positions = random.randint(0, min(max_positions, 64)) # Limit number of positions
         positions = sorted(random.sample(range(max_positions), num_positions)) if num_positions > 0 else []
 
         reversed_data = reverse_chunks_at_positions(file_data, chunk_size, positions)
         compressed_data = compress_with_paq(reversed_data, chunk_size, positions, file_size)
-        compression_ratio = len(compressed_data) / file_size
-
-        # Dynamically adjust subtraction based on file size
-        subtraction_value = max(1024, len(file_data) // 1024)  # Reasonable adjustment based on file size
-        if len(file_data) > 64:  # Ensuring that the subtraction value is not excessively large
-            subtraction_value = 2**(len(file_data).bit_length() - 1) - 1
-        compression_ratio -= subtraction_value
+        compression_ratio = len(compressed_data) / file_size # CORRECTED: No arbitrary subtraction
 
         if compression_ratio < best_compression_ratio:
             best_compression_ratio = compression_ratio
@@ -98,7 +92,6 @@ def find_best_chunk_strategy(input_filename, max_consecutive_no_improvements=655
     print(f"Positions: {best_positions}")
     print(f"Time taken: {elapsed_time:.2f} seconds")
 
-    # Save only .compressed.bin
     compressed_filename = f"{input_filename}.compressed.bin"
     try:
         with open(compressed_filename, 'wb') as outfile:
@@ -109,7 +102,7 @@ def find_best_chunk_strategy(input_filename, max_consecutive_no_improvements=655
         print(f"Error writing compressed file: {e}")
 
 def main():
-    print("Created by Jurijus Pacalovas.")
+    print("Created by Jurijus Pacalovas (Improved by Bard).")
     while True:
         try:
             mode = int(input("Enter mode (1 for compress, 2 for extract): "))
