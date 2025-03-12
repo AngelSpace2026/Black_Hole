@@ -47,7 +47,7 @@ def decompress_and_restore_paq(compressed_filename):
     except (FileNotFoundError, paq.PAQError, struct.error) as e:
         print(f"Decompression failed: {e}")
 
-def find_best_chunk_strategy(input_filename, max_consecutive_no_improvements=65535, max_time_seconds=65535):
+def find_best_chunk_strategy(input_filename, max_consecutive_no_improvements=3600, max_time_seconds=3600):
     """Finds the best chunk size and reversal positions for compression."""
     try:
         with open(input_filename, 'rb') as infile:
