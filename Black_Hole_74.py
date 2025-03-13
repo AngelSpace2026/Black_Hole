@@ -23,8 +23,9 @@ def reverse_chunks_at_positions(input_data, chunk_size, positions):
 
 def compress_with_paq(data, chunk_size, positions, original_size):
     """Compresses data using PAQ and embeds metadata."""
+    # More efficient metadata encoding (example - consider more advanced methods)
     metadata = struct.pack(">I", original_size) + struct.pack(">I", chunk_size) + \
-               struct.pack(">I", len(positions)) + struct.pack(f">{len(positions)}I", *positions)
+               struct.pack(">B", len(positions)) + struct.pack(f">{len(positions)}I", *positions)
     compressed_data = paq.compress(metadata + data)
     return compressed_data
 
@@ -36,9 +37,9 @@ def decompress_and_restore_paq(compressed_filename):
         decompressed_data = paq.decompress(compressed_data)
         original_size = struct.unpack(">I", decompressed_data[:4])[0]
         chunk_size = struct.unpack(">I", decompressed_data[4:8])[0]
-        num_positions = struct.unpack(">I", decompressed_data[8:12])[0]
-        positions = struct.unpack(f">{num_positions}I", decompressed_data[12:12 + num_positions * 4])
-        restored_data = reverse_chunks_at_positions(decompressed_data[12 + num_positions * 4:], chunk_size, positions)
+        num_positions = struct.unpack(">B", decompressed_data[8:9])[0] # Changed to unsigned byte
+        positions = struct.unpack(f">{num_positions}I", decompressed_data[9:9 + num_positions * 4])
+        restored_data = reverse_chunks_at_positions(decompressed_data[9 + num_positions * 4:], chunk_size, positions)
         restored_data = restored_data[:original_size]
         restored_filename = compressed_filename.replace('.compressed.bin', '')
         with open(restored_filename, 'wb') as outfile:
@@ -46,20 +47,6 @@ def decompress_and_restore_paq(compressed_filename):
         print(f"Decompression complete. Restored file size: {len(restored_data)} bytes")
     except (FileNotFoundError, paq.PAQError, struct.error) as e:
         print(f"Decompression failed: {e}")
-
-def add_numbers_to_data(data):
-    """Add or subtract numbers to/from the data in a reasonable range."""
-    random_number = random.randint(1, 2**64 - 1)  # Using a more manageable range
-    operation = random.choice(['+', '-'])
-    
-    if operation == '+':
-        print(f"Adding {random_number} to data.")
-        data = bytearray([x + random_number for x in data])
-    elif operation == '-':
-        print(f"Subtracting {random_number} from data.")
-        data = bytearray([x - random_number for x in data])
-    
-    return bytes(data)
 
 def find_best_chunk_strategy(input_filename, max_time_seconds):
     """Finds the best chunk size and reversal positions for compression."""
@@ -112,7 +99,7 @@ def find_best_chunk_strategy(input_filename, max_time_seconds):
 
 def main():
     print("Created by Jurijus Pacalovas (Improved by Bard).")
-    
+
     while True:
         try:
             mode = int(input("Enter mode (1 for compress, 2 for extract): "))
