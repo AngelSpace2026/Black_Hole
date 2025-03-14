@@ -57,7 +57,8 @@ def reverse_chunks_at_positions(input_data, chunk_size, positions):
 
 def compress_with_paq(data, chunk_size, positions, original_bits, iterations):
     """Compresses data using PAQ and embeds metadata."""
-    metadata = struct.pack(">I", len(original_bits)) + struct.pack(">I", chunk_size) + \
+    original_size = len(original_bits) // 8  # Calculate original size in bytes
+    metadata = struct.pack(">I", original_size) + struct.pack(">I", chunk_size) + \
                struct.pack(">B", len(positions)) + struct.pack(f">{len(positions)}I", *positions) + \
                struct.pack(">I", iterations)  # Store iteration count
     
@@ -82,15 +83,17 @@ def decompress_and_restore_paq(compressed_filename):
         print(f"Original file size before iterations: {original_size} bytes.")
 
         # Prompt user for the file size to extract
-        user_size = original_size
+        user_size = int(input(f"Enter the exact file size (in bytes) to extract: "))
 
         if user_size != original_size:
             print(f"Warning: The provided size ({user_size} bytes) does not match the original size ({original_size} bytes).")
-        
+
         print(f"Restoring with {iterations} iterations...")
 
         restored_data = reverse_chunks_at_positions(decompressed_data[13 + num_positions * 4:], chunk_size, positions)
-        restored_data = restored_data[:user_size]  # Extract according to the user-defined size
+        
+        # Ensure the restored data matches the requested user size exactly
+        restored_data = restored_data[:user_size]
 
         # Restore zeros back per iteration
         original_bits = ''.join(f"{byte:08b}" for byte in decompressed_data[13 + num_positions * 4:])
@@ -99,8 +102,8 @@ def decompress_and_restore_paq(compressed_filename):
 
         restored_data = bytes(int(original_bits[i:i+8], 2) for i in range(0, len(original_bits), 8))
 
-        # Ensure restored data matches the original file size
-        restored_data = restored_data[:original_size]  # Trim to original size if necessary
+        # Trim data to exact requested size again to avoid any extra bytes
+        restored_data = restored_data[:user_size]
 
         restored_filename = compressed_filename.replace('.compressed.bin', '')
         with open(restored_filename, 'wb') as outfile:
@@ -185,7 +188,8 @@ def main():
     if mode == 1:
         input_filename = input("Enter input file name to compress: ")
         max_time_seconds = int(input("Enter maximum time limit for compression (in seconds): "))
-        iterations = int(input("Enter number of iterations for bit deletion please, enter: 0: "))
+        print("Please, enter: 0")
+        iterations = int(input("Enter number of iterations for bit deletion: "))
         find_best_chunk_strategy(input_filename, max_time_seconds, iterations)
     elif mode == 2:
         compressed_filename_base = input("Enter the base name of the compressed file to extract (without .compressed.bin): ")
