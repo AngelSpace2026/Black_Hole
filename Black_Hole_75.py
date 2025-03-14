@@ -83,7 +83,7 @@ def decompress_and_restore_paq(compressed_filename):
         print(f"Original file size before iterations: {original_size} bytes.")
 
         # Prompt user for the file size to extract
-        user_size = int(input(f"Enter the exact file size (in bytes) to extract: "))
+        user_size = original_size
 
         if user_size != original_size:
             print(f"Warning: The provided size ({user_size} bytes) does not match the original size ({original_size} bytes).")
@@ -188,8 +188,8 @@ def main():
     if mode == 1:
         input_filename = input("Enter input file name to compress: ")
         max_time_seconds = int(input("Enter maximum time limit for compression (in seconds): "))
-        print("Please, enter: 0")
-        iterations = int(input("Enter number of iterations for bit deletion: "))
+        
+        iterations = 0
         find_best_chunk_strategy(input_filename, max_time_seconds, iterations)
     elif mode == 2:
         compressed_filename_base = input("Enter the base name of the compressed file to extract (without .compressed.bin): ")
