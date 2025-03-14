@@ -185,7 +185,7 @@ def main():
     if mode == 1:
         input_filename = input("Enter input file name to compress: ")
         max_time_seconds = int(input("Enter maximum time limit for compression (in seconds): "))
-        iterations = int(input("Enter number of iterations for bit deletion: "))
+        iterations = int(input("Enter number of iterations for bit deletion please, enter: 0: "))
         find_best_chunk_strategy(input_filename, max_time_seconds, iterations)
     elif mode == 2:
         compressed_filename_base = input("Enter the base name of the compressed file to extract (without .compressed.bin): ")
