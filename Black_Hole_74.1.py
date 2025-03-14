@@ -27,7 +27,8 @@ def reverse_chunks_at_positions(input_data, chunk_size, positions):
 
 def add_random_bytes(data, num_bytes=4):
     """Adds random 4-byte sequences at random positions."""
-    for _ in range(random.randint(1, len(data) // 100)):  # Limited insertions
+    num_insertions = max(1, len(data) // 100)  # Ensure at least one insertion if the data is large enough
+    for _ in range(num_insertions):  
         pos = random.randint(0, max(0, len(data) - num_bytes))
         data = data[:pos] + os.urandom(num_bytes) + data[pos + num_bytes:]
     return data
