@@ -24,16 +24,13 @@ def reverse_chunks_at_positions(input_data, chunk_size, positions):
 def subtract_random_value(data):
     """Subtracts a random value between -1 and 2**64-1 from the data."""
     random_value = random.randint(-1, 2**64 - 1)
-    # Convert the data to an integer, subtract the random value, and convert back to bytes
     data_as_int = int.from_bytes(data, byteorder='big', signed=False)
     data_as_int -= random_value
-    # Ensure we wrap around if the number goes below zero
-    data_as_int = data_as_int & ((2**64) - 1)
+    data_as_int = data_as_int & ((2**64) - 1)  # Wrap around
     return data_as_int.to_bytes((data_as_int.bit_length() + 7) // 8, byteorder='big')
 
 def compress_with_paq(data, chunk_size, positions, original_size):
     """Compresses data using PAQ and embeds metadata."""
-    # More efficient metadata encoding (example - consider more advanced methods)
     metadata = struct.pack(">I", original_size) + struct.pack(">I", chunk_size) + \
                struct.pack(">B", len(positions)) + struct.pack(f">{len(positions)}I", *positions)
     compressed_data = paq.compress(metadata + data)
@@ -47,7 +44,7 @@ def decompress_and_restore_paq(compressed_filename):
         decompressed_data = paq.decompress(compressed_data)
         original_size = struct.unpack(">I", decompressed_data[:4])[0]
         chunk_size = struct.unpack(">I", decompressed_data[4:8])[0]
-        num_positions = struct.unpack(">B", decompressed_data[8:9])[0] # Changed to unsigned byte
+        num_positions = struct.unpack(">B", decompressed_data[8:9])[0]
         positions = struct.unpack(f">{num_positions}I", decompressed_data[9:9 + num_positions * 4])
         restored_data = reverse_chunks_at_positions(decompressed_data[9 + num_positions * 4:], chunk_size, positions)
         restored_data = restored_data[:original_size]
@@ -58,7 +55,7 @@ def decompress_and_restore_paq(compressed_filename):
     except (FileNotFoundError, paq.PAQError, struct.error) as e:
         print(f"Decompression failed: {e}")
 
-def find_best_chunk_strategy(input_filename, max_time_seconds):
+def find_best_chunk_strategy(input_filename, max_consecutive_no_improvements=3600):
     """Finds the best chunk size and reversal positions for compression."""
     try:
         with open(input_filename, 'rb') as infile:
@@ -71,10 +68,10 @@ def find_best_chunk_strategy(input_filename, max_time_seconds):
     best_compression_ratio = float('inf')
     best_chunk_size = 1
     best_positions = []
-    start_time = time.time()
+    consecutive_no_improvements = 0
 
     iteration = 0
-    while time.time() - start_time < max_time_seconds:
+    while consecutive_no_improvements < max_consecutive_no_improvements:
         iteration += 1
         chunk_size = random.randint(1, min(256, file_size))  # Cap chunk size to file size
         max_positions = file_size // chunk_size
@@ -86,21 +83,21 @@ def find_best_chunk_strategy(input_filename, max_time_seconds):
         compressed_data = compress_with_paq(reversed_data, chunk_size, positions, file_size)
         compression_ratio = len(compressed_data) / file_size
 
-        # Print the compressed data size and ratio for every improvement
         if compression_ratio < best_compression_ratio:
             best_compression_ratio = compression_ratio
             best_chunk_size = chunk_size
             best_positions = positions
+            consecutive_no_improvements = 0  # Reset counter on improvement
             print(f"Improved compression: {len(compressed_data)} bytes (PAQ size) "
                   f"(chunk size: {chunk_size}, positions: {positions})")
             print(f"Compression ratio: {compression_ratio:.4f}")
+        else:
+            consecutive_no_improvements += 1  # Increase counter if no improvement
 
-    elapsed_time = time.time() - start_time
-    print(f"\nBest compression achieved after {iteration} iterations (time limit: {max_time_seconds} seconds):")
+    print(f"\nBest compression achieved after {iteration} iterations:")
     print(f"Compression ratio: {best_compression_ratio:.4f}")
     print(f"Chunk size: {best_chunk_size}")
     print(f"Positions: {best_positions}")
-    print(f"Time taken: {elapsed_time:.2f} seconds")
 
     compressed_filename = f"{input_filename}.compressed.bin"
     try:
@@ -126,8 +123,8 @@ def main():
 
     if mode == 1:
         input_filename = input("Enter input file name to compress: ")
-        max_time_seconds = int(input("Enter maximum time limit for compression (in seconds): "))
-        find_best_chunk_strategy(input_filename, max_time_seconds)
+        max_consecutive_no_improvements = 3600
+        find_best_chunk_strategy(input_filename, max_consecutive_no_improvements)
     elif mode == 2:
         compressed_filename_base = input("Enter the base name of the compressed file to extract (without .compressed.bin): ")
         compressed_filename = f"{compressed_filename_base}.compressed.bin"
