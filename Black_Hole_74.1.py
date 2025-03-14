@@ -104,7 +104,8 @@ def find_best_chunk_strategy(input_filename, max_time_seconds):
             best_compression_ratio = compression_ratio
             best_chunk_size = chunk_size
             best_positions = positions
-            print(f"Improved compression: {len(compressed_data)} bytes (chunk size: {chunk_size}, positions: {positions})")
+            # Print improvement ratio and size after PAQ compression
+            print(f"Improved compression: {len(compressed_data)} bytes (compression ratio: {compression_ratio:.4f})")
 
     elapsed_time = time.time() - start_time
     print(f"\nBest compression achieved after {iteration} iterations (time limit: {max_time_seconds} seconds):")
