@@ -124,7 +124,7 @@ def find_best_chunk_strategy(input_filename, max_time_seconds):
         print(f"Error writing compressed file: {e}")
 
 def main():
-    print("Created by Jurijus Pacalovas (Improved by Bard).")
+    print("Created by Jurijus Pacalovas.")
 
     while True:
         try:
