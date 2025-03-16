@@ -87,14 +87,8 @@ def find_best_chunk_strategy(input_filename, max_iterations):
             best_compression_ratio, best_chunk_size, best_positions, best_strategy = compression_ratio_2, chunk_size, positions, 1
             best_compressed_data = compressed_data_2
 
-    # Save the best compression result
-    compressed_filename = f"{input_filename}.compressed.bin"
-    with open(compressed_filename, 'wb') as outfile:
-        outfile.write(best_compressed_data)
-
-    print(f"Best compression saved as: {compressed_filename}")
-
-    return compressed_filename
+    # Return best compression result
+    return best_compressed_data, best_compression_ratio
 
 def main():
     print("Created by Jurijus Pacalovas.")
@@ -114,17 +108,33 @@ def main():
     if mode == 1:
         input_filename = input("Enter input file name to compress (letters and numbers allowed): ")
 
-        # Run the process 30 times
         best_compressed_filename = None
+        best_compressed_data = None
+        best_compression_ratio = float('inf')
+
+        # Run the process 30 times
         for i in range(30):
-            #print(f"\nRunning iteration {i+1} of 10 with 7200 iterations for compression and decompression...")
+            print(f"\nRunning iteration {i+1} of 10 with 7200 iterations for compression and decompression...")
+
             # Run 7200 iterations without asking for time limit
-            best_compressed_filename = find_best_chunk_strategy(input_filename, 7200)
-            #print(f"Compression iteration {i+1} complete.\n")
+            compressed_data, compression_ratio = find_best_chunk_strategy(input_filename, 7200)
+
+            if compression_ratio < best_compression_ratio:
+                best_compression_ratio = compression_ratio
+                best_compressed_data = compressed_data
+                best_compressed_filename = f"{input_filename}.best_compressed.bin"
+
+            print(f"Compression iteration {i+1} complete.\n")
 
             # Decompress after each compression
             decompress_and_restore_paq(best_compressed_filename)
-            #print(f"Decompression iteration {i+1} complete.\n")
+            print(f"Decompression iteration {i+1} complete.\n")
+
+        # Save the best compression result
+        with open(best_compressed_filename, 'wb') as outfile:
+            outfile.write(best_compressed_data)
+
+        print(f"Best compression saved as: {best_compressed_filename}")
 
     # If mode is 2 (extract), ask for the compressed file and run decompression
     elif mode == 2:
