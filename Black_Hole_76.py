@@ -64,6 +64,7 @@ def find_best_chunk_strategy(input_filename, max_iterations):
 
     best_compression_ratio = float('inf')
     best_chunk_size, best_positions, best_strategy = 1, [], None
+    best_compressed_data = None
 
     for _ in range(max_iterations):
         chunk_size = random.randint(1, min(256, file_size))
@@ -81,18 +82,19 @@ def find_best_chunk_strategy(input_filename, max_iterations):
 
         if compression_ratio_1 < compression_ratio_2 and compression_ratio_1 < best_compression_ratio:
             best_compression_ratio, best_chunk_size, best_positions, best_strategy = compression_ratio_1, chunk_size, positions, 0
+            best_compressed_data = compressed_data_1
         elif compression_ratio_2 < best_compression_ratio:
             best_compression_ratio, best_chunk_size, best_positions, best_strategy = compression_ratio_2, chunk_size, positions, 1
+            best_compressed_data = compressed_data_2
 
+    # Save the best compression result
     compressed_filename = f"{input_filename}.compressed.bin"
     with open(compressed_filename, 'wb') as outfile:
-        if best_strategy == 0:
-            compressed_data = compress_with_paq(reverse_chunks_at_positions(file_data, best_chunk_size, best_positions), best_chunk_size, best_positions, file_size, 0)
-        else:
-            compressed_data = compress_with_paq(add_random_bytes(reverse_chunks_at_positions(file_data, best_chunk_size, best_positions)), best_chunk_size, best_positions, file_size, 1)
-        outfile.write(compressed_data)
+        outfile.write(best_compressed_data)
 
-    print(f"Compressed file saved as: {compressed_filename}")
+    print(f"Best compression saved as: {compressed_filename}")
+
+    return compressed_filename
 
 def main():
     print("Created by Jurijus Pacalovas.")
@@ -113,15 +115,15 @@ def main():
         input_filename = input("Enter input file name to compress (letters and numbers allowed): ")
 
         # Run the process 30 times
+        best_compressed_filename = None
         for i in range(30):
             #print(f"\nRunning iteration {i+1} of 10 with 7200 iterations for compression and decompression...")
             # Run 7200 iterations without asking for time limit
-            find_best_chunk_strategy(input_filename, 7200)
+            best_compressed_filename = find_best_chunk_strategy(input_filename, 7200)
             #print(f"Compression iteration {i+1} complete.\n")
 
             # Decompress after each compression
-            compressed_filename = f"{input_filename}.compressed.bin"
-            decompress_and_restore_paq(compressed_filename)
+            decompress_and_restore_paq(best_compressed_filename)
             #print(f"Decompression iteration {i+1} complete.\n")
 
     # If mode is 2 (extract), ask for the compressed file and run decompression
