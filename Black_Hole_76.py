@@ -120,7 +120,7 @@ def main():
         input_filename = input("Enter input file name to compress (letters and numbers allowed): ")
 
         # Run the process 7200 times and select the best compression result
-        best_compressed_filename = find_best_chunk_strategy(input_filename, 30000)
+        best_compressed_filename = find_best_chunk_strategy(input_filename, 7200)
 
         # Decompress after selecting the best compression result
         decompress_and_restore_paq(best_compressed_filename)
