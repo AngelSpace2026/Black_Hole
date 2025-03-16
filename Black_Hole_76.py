@@ -35,7 +35,12 @@ def decompress_and_restore_paq(compressed_filename):
         restored_data = reverse_chunks_at_positions(decompressed_data[10 + num_positions * 4:], chunk_size, positions)
         restored_data = restored_data[:original_size]
 
+        # Make sure to check the path and file name
         restored_filename = compressed_filename.replace('.compressed.bin', '')
+
+        # Add a more descriptive extension for the restored file, like '.restored' or another appropriate format
+        restored_filename += ''
+
         with open(restored_filename, 'wb') as outfile:
             outfile.write(restored_data)
 
@@ -63,7 +68,6 @@ def find_best_chunk_strategy(input_filename, max_iterations):
         file_size = len(file_data)
 
     best_compression_ratio = float('inf')
-    best_chunk_size, best_positions, best_strategy = 1, [], None
     best_compressed_data = None
 
     for _ in range(max_iterations):
@@ -80,15 +84,22 @@ def find_best_chunk_strategy(input_filename, max_iterations):
         compressed_data_2 = compress_with_paq(modified_data_2, chunk_size, positions, file_size, 1)
         compression_ratio_2 = len(compressed_data_2) / file_size
 
+        # Keep the best compression ratio (smallest)
         if compression_ratio_1 < compression_ratio_2 and compression_ratio_1 < best_compression_ratio:
-            best_compression_ratio, best_chunk_size, best_positions, best_strategy = compression_ratio_1, chunk_size, positions, 0
+            best_compression_ratio = compression_ratio_1
             best_compressed_data = compressed_data_1
         elif compression_ratio_2 < best_compression_ratio:
-            best_compression_ratio, best_chunk_size, best_positions, best_strategy = compression_ratio_2, chunk_size, positions, 1
+            best_compression_ratio = compression_ratio_2
             best_compressed_data = compressed_data_2
 
-    # Return best compression result
-    return best_compressed_data, best_compression_ratio
+    # Save only the best compression result
+    best_compressed_filename = f"{input_filename}.compressed.bin"
+    with open(best_compressed_filename, 'wb') as outfile:
+        outfile.write(best_compressed_data)
+
+    print(f"Best compression result saved as: {best_compressed_filename}")
+
+    return best_compressed_filename
 
 def main():
     print("Created by Jurijus Pacalovas.")
@@ -108,33 +119,11 @@ def main():
     if mode == 1:
         input_filename = input("Enter input file name to compress (letters and numbers allowed): ")
 
-        best_compressed_filename = None
-        best_compressed_data = None
-        best_compression_ratio = float('inf')
+        # Run the process 7200 times and select the best compression result
+        best_compressed_filename = find_best_chunk_strategy(input_filename, 30000)
 
-        # Run the process 30 times
-        for i in range(30):
-            print(f"\nRunning iteration {i+1} of 10 with 7200 iterations for compression and decompression...")
-
-            # Run 7200 iterations without asking for time limit
-            compressed_data, compression_ratio = find_best_chunk_strategy(input_filename, 7200)
-
-            if compression_ratio < best_compression_ratio:
-                best_compression_ratio = compression_ratio
-                best_compressed_data = compressed_data
-                best_compressed_filename = f"{input_filename}.best_compressed.bin"
-
-            print(f"Compression iteration {i+1} complete.\n")
-
-            # Decompress after each compression
-            decompress_and_restore_paq(best_compressed_filename)
-            print(f"Decompression iteration {i+1} complete.\n")
-
-        # Save the best compression result
-        with open(best_compressed_filename, 'wb') as outfile:
-            outfile.write(best_compressed_data)
-
-        print(f"Best compression saved as: {best_compressed_filename}")
+        # Decompress after selecting the best compression result
+        decompress_and_restore_paq(best_compressed_filename)
 
     # If mode is 2 (extract), ask for the compressed file and run decompression
     elif mode == 2:
