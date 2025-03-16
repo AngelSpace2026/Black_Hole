@@ -35,10 +35,7 @@ def decompress_and_restore_paq(compressed_filename):
         restored_data = reverse_chunks_at_positions(decompressed_data[10 + num_positions * 4:], chunk_size, positions)
         restored_data = restored_data[:original_size]
 
-        # Make sure to check the path and file name
         restored_filename = compressed_filename.replace('.compressed.bin', '')
-
-        # Add a more descriptive extension for the restored file, like '.restored' or another appropriate format
         restored_filename += ''
 
         with open(restored_filename, 'wb') as outfile:
@@ -70,7 +67,7 @@ def find_best_chunk_strategy(input_filename, max_iterations):
     best_compression_ratio = float('inf')
     best_compressed_data = None
 
-    for _ in range(max_iterations):
+    for i in range(max_iterations):
         chunk_size = random.randint(1, min(256, file_size))
         num_positions = random.randint(0, min(file_size // chunk_size, 64))
         positions = sorted(random.sample(range(file_size // chunk_size), num_positions)) if num_positions > 0 else []
@@ -91,6 +88,15 @@ def find_best_chunk_strategy(input_filename, max_iterations):
         elif compression_ratio_2 < best_compression_ratio:
             best_compression_ratio = compression_ratio_2
             best_compressed_data = compressed_data_2
+
+        # Remove intermediate files after each iteration
+        temp_filename_1 = f"{input_filename}_{i}_1.compressed.bin"
+        temp_filename_2 = f"{input_filename}_{i}_2.compressed.bin"
+
+        if os.path.exists(temp_filename_1):
+            os.remove(temp_filename_1)
+        if os.path.exists(temp_filename_2):
+            os.remove(temp_filename_2)
 
     # Save only the best compression result
     best_compressed_filename = f"{input_filename}.compressed.bin"
