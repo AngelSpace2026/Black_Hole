@@ -166,6 +166,16 @@ def main():
 
     while True:
         try:
+            L = int(input("Enter Level of compress (1 to 9): "))
+            if L not in range(1, 10):
+                print("Error: Please enter a value for L between 1 and 9.")
+            else:
+                break
+        except ValueError:
+            print("Error: Invalid input. Please enter a number between 1 and 9.")
+
+    while True:
+        try:
             mode = int(input("Enter mode (1 for compress, 2 for extract): "))
             if mode not in [1, 2]:
                 print("Error: Please enter 1 for compress or 2 for extract.")
@@ -175,17 +185,6 @@ def main():
             print("Error: Invalid input. Please enter a number (1 or 2).")
 
     if mode == 1:
-        
-        while True:
-            try:
-                L = int(input("Enter Level of compress (1 to 9): "))
-                if L not in range(1, 10):
-                    print("Error: Please enter a value for L between 1 and 9.")
-                else:
-                    break
-            except ValueError:
-                print("Error: Invalid input. Please enter a number between 1 and 9.")        
-        
         input_filename = input("Enter input file name to compress: ")
         best_compressed_filename = run_compression(input_filename, L)
         decompress_and_restore_paq(best_compressed_filename)
