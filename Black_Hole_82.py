@@ -83,7 +83,7 @@ def decompress_and_restore_paq(compressed_filename):
         print(f"Error during decompression: {e}")
 
 def find_best_iteration(input_filename, max_iterations):
-    """Finds the best compression strategy within a single attempt (172,800 iterations)."""
+    """Finds the best compression strategy within the given iterations."""
     with open(input_filename, 'rb') as infile:
         file_data = infile.read()
         file_size = len(file_data)
@@ -120,15 +120,30 @@ def find_best_iteration(input_filename, max_iterations):
 
     return best_compressed_data, best_compression_ratio, best_strategy
 
-def run_compression(input_filename):
-    """Runs 30 attempts, each with 172,800 iterations, and picks the best overall result."""
+def run_compression(input_filename, L):
+    """Runs compression based on user-selected L value."""
+    # Set iteration count based on L value
+    iterations_map = {
+        1: 300,
+        2: 1000,
+        3: 3600,
+        4: 7200,
+        5: 6 * 7200,
+        6: 9 * 7200,
+        7: 12 * 7200,
+        8: 15 * 7200,
+        9: 18 * 7200
+    }
+    
+    max_iterations = iterations_map.get(L, 7200)  # Default to 7200 if invalid L
+    
     best_of_30_compressed_data = None
     best_of_30_ratio = float('inf')
     best_of_30_strategy = None
 
     for i in range(30):
-        print(f"Running compression attempt {i+1}/30 with 172,800 iterations...")
-        compressed_data, compression_ratio, strategy = find_best_iteration(input_filename, 172800)
+        print(f"Running compression attempt {i+1}/30 with {max_iterations} iterations...")
+        compressed_data, compression_ratio, strategy = find_best_iteration(input_filename, max_iterations)
 
         if compressed_data and compression_ratio < best_of_30_ratio:
             best_of_30_ratio = compression_ratio
@@ -151,6 +166,16 @@ def main():
 
     while True:
         try:
+            L = int(input("Enter Level of compress (1 to 9): "))
+            if L not in range(1, 10):
+                print("Error: Please enter a value for L between 1 and 9.")
+            else:
+                break
+        except ValueError:
+            print("Error: Invalid input. Please enter a number between 1 and 9.")
+
+    while True:
+        try:
             mode = int(input("Enter mode (1 for compress, 2 for extract): "))
             if mode not in [1, 2]:
                 print("Error: Please enter 1 for compress or 2 for extract.")
@@ -161,7 +186,7 @@ def main():
 
     if mode == 1:
         input_filename = input("Enter input file name to compress: ")
-        best_compressed_filename = run_compression(input_filename)
+        best_compressed_filename = run_compression(input_filename, L)
         decompress_and_restore_paq(best_compressed_filename)
 
     elif mode == 2:
