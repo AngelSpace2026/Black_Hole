@@ -124,7 +124,7 @@ def run_compression(input_filename, L):
     """Runs compression based on user-selected L value."""
     # Set iteration count based on L value
     iterations_map = {
-        1: 24,
+        1: 300,
         2: 1000,
         3: 3600,
         4: 7200,
