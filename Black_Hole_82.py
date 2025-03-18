@@ -20,15 +20,13 @@ def add_random_bytes(data, num_bytes=4):
     return data
 
 def subtract_and_move_bits(data, shift_min=1, shift_max=7):
-    """Subtracts a random value and moves bits, optimized to avoid memory overflow."""
+    """Subtracts a random value and moves bits."""
     modified_data = bytearray()
     for byte in data:
         sub_value = random.randint(1, 255)
         new_byte = (byte - sub_value) % 256  
-
         shift_amount = random.randint(shift_min, shift_max)
         shifted_byte = ((new_byte << shift_amount) | (new_byte >> (8 - shift_amount))) & 0xFF  
-
         modified_data.append(shifted_byte)
     return bytes(modified_data)
 
@@ -42,7 +40,7 @@ def move_bits_randomly(data, shift_min=1, shift_max=7):
     return bytes(modified_data)
 
 def compress_with_paq(data, chunk_size, positions, original_size, strategy):
-    """Compresses data using PAQ and embeds metadata, including strategy used."""
+    """Compresses data using PAQ and embeds metadata."""
     metadata = struct.pack(">I", original_size) + struct.pack(">I", chunk_size) + \
                struct.pack(">B", len(positions)) + struct.pack(f">{len(positions)}I", *positions) + \
                struct.pack(">B", strategy)  
@@ -61,16 +59,15 @@ def decompress_and_restore_paq(compressed_filename):
         restored_data = decompressed_data[10 + num_positions * 4:]
 
         # Reverse the transformations based on strategy
-        if strategy == 1:  # Reverse chunks
+        if strategy == 1:  
             restored_data = reverse_chunks_at_positions(restored_data, chunk_size, positions)
-        elif strategy == 2:  # Reverse and remove added bytes (approximation)
+        elif strategy == 2:  
             restored_data = reverse_chunks_at_positions(restored_data, chunk_size, positions)
             restored_data = add_random_bytes(restored_data)
-        elif strategy == 3:  # Reverse subtract and move
+        elif strategy == 3:  
             restored_data = subtract_and_move_bits(restored_data)
-        elif strategy == 4:  # Reverse move bits
+        elif strategy == 4:  
             restored_data = move_bits_randomly(restored_data)
-        # Add other strategies here for 5 to 24 if needed
 
         restored_data = restored_data[:original_size]
 
@@ -97,7 +94,7 @@ def find_best_iteration(input_filename, max_iterations):
         num_positions = random.randint(0, min(file_size // chunk_size, 64))
         positions = sorted(random.sample(range(file_size // chunk_size), num_positions)) if num_positions > 0 else []
 
-        strategy = (iteration % 24) + 1  # Cycle through strategies (1 to 24)
+        strategy = (iteration % 24) + 1  
 
         if strategy == 1:
             transformed_data = reverse_chunks_at_positions(file_data, chunk_size, positions)
@@ -108,7 +105,6 @@ def find_best_iteration(input_filename, max_iterations):
             transformed_data = subtract_and_move_bits(file_data)
         elif strategy == 4:
             transformed_data = move_bits_randomly(file_data)
-        # Add other strategy transformations for 5 to 24
 
         compressed_data = compress_with_paq(transformed_data, chunk_size, positions, file_size, strategy)
         compression_ratio = len(compressed_data) / file_size
@@ -121,8 +117,15 @@ def find_best_iteration(input_filename, max_iterations):
     return best_compressed_data, best_compression_ratio, best_strategy
 
 def run_compression(input_filename, L):
-    """Runs compression based on user-selected L value."""
-    # Set iteration count based on L value
+    """Runs compression, skipping .bin and .txt files, and files smaller than 2KB."""
+    if input_filename.lower().endswith((".bin", ".txt")):
+        print(f"Skipping compression for {input_filename} (Unsupported file type).")
+        return None
+
+    if os.path.getsize(input_filename) < 2048:  
+        print(f"Skipping compression for {input_filename} (File size is less than 2KB).")
+        return None
+
     iterations_map = {
         1: 300,
         2: 1000,
@@ -135,8 +138,8 @@ def run_compression(input_filename, L):
         9: 18 * 7200
     }
     
-    max_iterations = iterations_map.get(L, 7200)  # Default to 7200 if invalid L
-    
+    max_iterations = iterations_map.get(L, 7200)
+
     best_of_30_compressed_data = None
     best_of_30_ratio = float('inf')
     best_of_30_strategy = None
@@ -164,15 +167,7 @@ def run_compression(input_filename, L):
 def main():
     print("Created by Jurijus Pacalovas.")
 
-    while True:
-        try:
-            mode = int(input("Enter mode (1 for compress, 2 for extract): "))
-            if mode not in [1, 2]:
-                print("Error: Please enter 1 for compress or 2 for extract.")
-            else:
-                break
-        except ValueError:
-            print("Error: Invalid input. Please enter a number (1 or 2).")
+    mode = int(input("Enter mode (1 for compress, 2 for extract): "))
 
     if mode == 1:
         
@@ -184,14 +179,15 @@ def main():
                 else:
                     break
             except ValueError:
-                print("Error: Invalid input. Please enter a number between 1 and 9.")  
-                      
+                print("Error: Invalid input. Please enter a number between 1 and 9.")        
+        
         input_filename = input("Enter input file name to compress: ")
         best_compressed_filename = run_compression(input_filename, L)
-        decompress_and_restore_paq(best_compressed_filename)
+        if best_compressed_filename:
+            decompress_and_restore_paq(best_compressed_filename)
 
     elif mode == 2:
-        compressed_filename = input("Enter the full name of the compressed file to extract: ")
+        compressed_filename = input("Enter the compressed file name to extract: ")
         decompress_and_restore_paq(compressed_filename)
 
 if __name__ == "__main__":
