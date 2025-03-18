@@ -43,34 +43,17 @@ def decompress_and_restore_paq(compressed_filename):
     try:
         with open(compressed_filename, 'rb') as infile:
             decompressed_data = paq.decompress(infile.read())
-
-        # Ensure that we correctly unpack the first part of the metadata
         original_size, chunk_size, num_positions = struct.unpack(">IIB", decompressed_data[:9])
-
-        #print(f"Original size: {original_size}, Chunk size: {chunk_size}, Number of positions: {num_positions}")
-
-        # Unpack the positions (ensure the correct number of positions are unpacked)
         positions = struct.unpack(f">{num_positions}I", decompressed_data[9:9 + num_positions * 4])
-        #print(f"Positions: {positions}")
-
-        # Unpack strategy (the last byte)
         strategy = struct.unpack(">B", decompressed_data[9 + num_positions * 4:10 + num_positions * 4])[0]
-
-        #print(f"Strategy: {strategy}")
-
-        # Restore data by reversing chunk operations
         restored_data = reverse_chunks_at_positions(decompressed_data[10 + num_positions * 4:], chunk_size, positions)
-        restored_data = restored_data[:original_size]  # Ensure we only return the original data size
-
+        restored_data = restored_data[:original_size]
         restored_filename = compressed_filename.replace('.compressed.bin', '')
         with open(restored_filename, 'wb') as outfile:
             outfile.write(restored_data)
-
-        #print(f"Decompression complete. Restored file: {restored_filename}")
-
+        print(f"Decompression complete. Restored file: {restored_filename}")
     except Exception as e:
-        #print(f"Error during decompression: {e}")
-        NY=3
+        print(f"Error during decompression: {e}")
 
 def find_best_iteration(input_filename, max_iterations):
     """Finds the best compression strategy within a single attempt (7200 iterations)."""
@@ -81,8 +64,10 @@ def find_best_iteration(input_filename, max_iterations):
     best_compression_ratio = float('inf')
     best_compressed_data = None
     best_strategy = None
+    all_temp_files = []  # To track all temp files across attempts
 
     for iteration in range(max_iterations):
+        print(f"Running iteration {iteration + 1} of {max_iterations}...")
         chunk_size = random.randint(1, min(256, file_size))
         num_positions = random.randint(0, min(file_size // chunk_size, 64))
         positions = sorted(random.sample(range(file_size // chunk_size), num_positions)) if num_positions > 0 else []
@@ -106,10 +91,9 @@ def find_best_iteration(input_filename, max_iterations):
         # Decompress and check if it can be restored
         try:
             decompress_and_restore_paq(temp_filename)
-            YN=1
+            print(f"Iteration {iteration} decompressed successfully.")
         except Exception as e:
-            #print(f"Error during decompression of iteration {iteration}: {e}")
-            YN=0
+            print(f"Error during decompression of iteration {iteration}: {e}")
 
         # Choose the best strategy in this iteration
         if compression_ratio < best_compression_ratio:
@@ -117,31 +101,30 @@ def find_best_iteration(input_filename, max_iterations):
             best_compressed_data = compressed_data
             best_strategy = 1 if iteration % 2 == 0 else 2
 
-        # Remove the temporary compressed file after decompression
-        if os.path.exists(temp_filename):
-            os.remove(temp_filename)
+        # Add this temp file to the list for cleanup later
+        all_temp_files.append(temp_filename)
 
-    return best_compressed_data, best_compression_ratio, best_strategy
+    return best_compressed_data, best_compression_ratio, best_strategy, all_temp_files
 
 def run_compression(input_filename):
     """Runs 30 attempts, each with 7200 iterations, and picks the best overall result."""
     best_of_30_compressed_data = None
     best_of_30_ratio = float('inf')
     best_of_30_strategy = None
+    all_temp_files = []  # To track all temp files across attempts
 
     for i in range(30):
-        #print(f"Running compression attempt {i+1}/30 with 7200 iterations...")
-        compressed_data, compression_ratio, strategy = find_best_iteration(input_filename, 7200)
+        print(f"Running compression attempt {i+1}/30 with 7200 iterations...")
+        compressed_data, compression_ratio, strategy, temp_files = find_best_iteration(input_filename, 7200)
 
+        # Add the temp files of this attempt to the overall list
+        all_temp_files.extend(temp_files)
+
+        # Keep track of the best compression result
         if compressed_data and compression_ratio < best_of_30_ratio:
             best_of_30_ratio = compression_ratio
             best_of_30_compressed_data = compressed_data
             best_of_30_strategy = strategy
-
-        # Remove intermediate files (if any)
-        temp_filename = f"{input_filename}_attempt_{i}.compressed.bin"
-        if os.path.exists(temp_filename):
-            os.remove(temp_filename)
 
     # Save the best compression result
     final_compressed_filename = f"{input_filename}.compressed.bin"
@@ -149,11 +132,28 @@ def run_compression(input_filename):
         outfile.write(best_of_30_compressed_data)
 
     print(f"Best of 30 compression saved as: {final_compressed_filename} (Strategy {best_of_30_strategy})")
+
+    # Cleanup: Remove all temporary files created during compression, except the final compressed file
+    for temp_file in all_temp_files:
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
+
+    # Delete any other .compressed.bin files, leaving only the final one
+    for file in os.listdir('.'):
+        if file.endswith('.compressed.bin') and file != final_compressed_filename:
+            os.remove(file)
+
+    # Delete any files with 'attempt_' in their names
+    for file in os.listdir('.'):
+        if 'attempt_' in file:
+            os.remove(file)
+
+    print("Temporary files and attempt files removed, only the final compressed file remains.")
+
     return final_compressed_filename
 
 def main():
     print("Created by Jurijus Pacalovas.")
-
     while True:
         try:
             mode = int(input("Enter mode (1 for compress, 2 for extract): "))
@@ -166,13 +166,11 @@ def main():
 
     if mode == 1:
         input_filename = input("Enter input file name to compress: ")
-
         # Run 30 compression attempts, each with 7200 iterations
         best_compressed_filename = run_compression(input_filename)
 
         # Decompress the best compression result
         decompress_and_restore_paq(best_compressed_filename)
-
     elif mode == 2:
         compressed_filename = input("Enter the full name of the compressed file to extract: ")
         decompress_and_restore_paq(compressed_filename)
