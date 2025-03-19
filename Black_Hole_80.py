@@ -137,7 +137,7 @@ def main():
 
     if mode == 1:
         input_filename = input("Enter input file name to compress: ")
-        compressed_filename = run_compression(input_filename, max_attempts=1, max_iterations=24)
+        compressed_filename = run_compression(input_filename, max_attempts=30, max_iterations=7200)
         decompress_and_restore_paq(compressed_filename)
     elif mode == 2:
         compressed_filename = input("Enter the full name of the compressed file to extract: ")
