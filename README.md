@@ -24,7 +24,7 @@ pip install paq
 
 
 
-password key Jurijus Pacalovas
+password key Jurijus Pacalovas Sha 256
 
 1 compress
 
