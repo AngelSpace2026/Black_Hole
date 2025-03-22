@@ -12,13 +12,26 @@ def reverse_chunks_at_positions(input_data, chunk_size, positions):
             chunked_data[pos] = chunked_data[pos][::-1]
     return b"".join(chunked_data)
 
-def add_random_bytes(data, num_bytes=4):
-    """Adds random 4-byte sequences at random positions."""
-    num_insertions = max(1, len(data) // 100)
-    for _ in range(num_insertions):
-        pos = random.randint(0, max(0, len(data) - num_bytes))
-        data = data[:pos] + os.urandom(num_bytes) + data[pos:]
-    return data
+def flip_2bit_pairs(data):
+    """Flips 2-bit pairs in the byte data."""
+    modified_data = bytearray(data)
+    for i in range(0, len(modified_data) * 8, 2):  # Process in 2-bit steps
+        byte_index = i // 8
+        bit_position = i % 8
+
+        if byte_index < len(modified_data):
+            byte = modified_data[byte_index]
+
+            # Extract the 2-bit pair
+            bit_pair = (byte >> (6 - bit_position)) & 0b11
+
+            # Flip the 2-bit pair
+            flipped_pair = bit_pair ^ 0b11  # Invert both bits
+
+            # Update the byte
+            modified_data[byte_index] = (byte & ~(0b11 << (6 - bit_position))) | (flipped_pair << (6 - bit_position))
+
+    return bytes(modified_data)
 
 def compress_with_paq(data, chunk_size, positions, original_size, strategy):
     """Compresses data using PAQ and embeds metadata, including the strategy."""
@@ -42,10 +55,10 @@ def decompress_and_restore_paq(compressed_filename):
         strategy = struct.unpack(">B", decompressed_data[9 + num_positions * 4:10 + num_positions * 4])[0]
 
         restored_data = reverse_chunks_at_positions(decompressed_data[10 + num_positions * 4:], chunk_size, positions)
+        restored_data = flip_2bit_pairs(restored_data)  # Restore the flipped 2-bit pairs
         restored_data = restored_data[:original_size]
 
         restored_filename = compressed_filename.replace('.compressed.bin', '')
-        restored_filename += ''
 
         with open(restored_filename, 'wb') as outfile:
             outfile.write(restored_data)
@@ -56,7 +69,7 @@ def decompress_and_restore_paq(compressed_filename):
         print(f"Error during decompression: {e}")
 
 def find_best_iteration(input_filename, max_iterations):
-    """Finds the best compression within a single attempt (out of 7200 iterations)."""
+    """Finds the best compression within a single attempt."""
     with open(input_filename, 'rb') as infile:
         file_data = infile.read()
         file_size = len(file_data)
@@ -69,8 +82,10 @@ def find_best_iteration(input_filename, max_iterations):
         num_positions = random.randint(0, min(file_size // chunk_size, 64))
         positions = sorted(random.sample(range(file_size // chunk_size), num_positions)) if num_positions > 0 else []
 
-        reversed_data = reverse_chunks_at_positions(file_data, chunk_size, positions)
-        compressed_data = compress_with_paq(reversed_data, chunk_size, positions, file_size, 0)
+        modified_data = reverse_chunks_at_positions(file_data, chunk_size, positions)
+        modified_data = flip_2bit_pairs(modified_data)  # Apply 2-bit flipping
+
+        compressed_data = compress_with_paq(modified_data, chunk_size, positions, file_size, 0)
         compression_ratio = len(compressed_data) / file_size
 
         if compression_ratio < best_compression_ratio:
@@ -80,29 +95,24 @@ def find_best_iteration(input_filename, max_iterations):
     return best_compressed_data, best_compression_ratio
 
 def run_compression(input_filename):
-    """Runs 30 attempts, each with 7200 iterations, and keeps only the best compression result."""
-    best_of_30_compressed_data = None
-    best_of_30_ratio = float('inf')
+    """Runs 4 attempts, each with 300 iterations, and keeps only the best compression result."""
+    best_of_4_compressed_data = None
+    best_of_4_ratio = float('inf')
 
-    for i in range(8):
-        print(f"Running compression attempt {i+1}/8 with 300 iterations...")
+    for i in range(4):
+        print(f"Running compression attempt {i+1}/4 with 300 iterations...")
         compressed_data, compression_ratio = find_best_iteration(input_filename, 300)
 
-        if compressed_data and compression_ratio < best_of_30_ratio:
-            best_of_30_ratio = compression_ratio
-            best_of_30_compressed_data = compressed_data
-
-        # Remove intermediate files
-        temp_filename = f"{input_filename}_attempt_{i}.compressed.bin"
-        if os.path.exists(temp_filename):
-            os.remove(temp_filename)
+        if compressed_data and compression_ratio < best_of_4_ratio:
+            best_of_4_ratio = compression_ratio
+            best_of_4_compressed_data = compressed_data
 
     # Save the best compression result
     final_compressed_filename = f"{input_filename}.compressed.bin"
     with open(final_compressed_filename, 'wb') as outfile:
-        outfile.write(best_of_30_compressed_data)
+        outfile.write(best_of_4_compressed_data)
 
-    print(f"Best of 30 compression saved as: {final_compressed_filename}")
+    print(f"Best compression saved as: {final_compressed_filename}")
     return final_compressed_filename
 
 def main():
@@ -121,7 +131,7 @@ def main():
     if mode == 1:
         input_filename = input("Enter input file name to compress: ")
 
-        # Run 30 compression attempts, each with 7200 iterations
+        # Run 4 compression attempts, each with 300 iterations
         best_compressed_filename = run_compression(input_filename)
 
         # Decompress the best compression result
