@@ -45,6 +45,7 @@ def decompress_and_restore_paq(compressed_filename):
         restored_data = restored_data[:original_size]
 
         restored_filename = compressed_filename.replace('.compressed.bin', '')
+        restored_filename += ''
 
         with open(restored_filename, 'wb') as outfile:
             outfile.write(restored_data)
@@ -79,30 +80,35 @@ def find_best_iteration(input_filename, max_iterations):
     return best_compressed_data, best_compression_ratio
 
 def run_compression(input_filename):
-    """Runs 9 attempts, each with 7200 iterations, and keeps only the best compression result."""
-    best_of_9_compressed_data = None
-    best_of_9_ratio = float('inf')
+    """Runs 30 attempts, each with 7200 iterations, and keeps only the best compression result."""
+    best_of_30_compressed_data = None
+    best_of_30_ratio = float('inf')
 
     for i in range(9):
         print(f"Running compression attempt {i+1}/9 with 7200 iterations...")
         compressed_data, compression_ratio = find_best_iteration(input_filename, 7200)
 
-        if compressed_data and compression_ratio < best_of_9_ratio:
-            best_of_9_ratio = compression_ratio
-            best_of_9_compressed_data = compressed_data
+        if compressed_data and compression_ratio < best_of_30_ratio:
+            best_of_30_ratio = compression_ratio
+            best_of_30_compressed_data = compressed_data
 
         # Print the size of the compressed file after the attempt
         compressed_size = len(compressed_data)
         print(f"Attempt {i+1} compressed size: {compressed_size} bytes")
 
+        # Remove intermediate files
+        temp_filename = f"{input_filename}_attempt_{i}.compressed.bin"
+        if os.path.exists(temp_filename):
+            os.remove(temp_filename)
+
     # Save the best compression result
     final_compressed_filename = f"{input_filename}.compressed.bin"
     with open(final_compressed_filename, 'wb') as outfile:
-        outfile.write(best_of_9_compressed_data)
+        outfile.write(best_of_30_compressed_data)
 
     # Print the size of the final compressed file
     compressed_size = os.path.getsize(final_compressed_filename)
-    print(f"Best of 9 compression saved as: {final_compressed_filename}")
+    print(f"Best of 30 compression saved as: {final_compressed_filename}")
     print(f"Compressed file size: {compressed_size} bytes")
     
     return final_compressed_filename
@@ -123,11 +129,7 @@ def main():
     if mode == 1:
         input_filename = input("Enter input file name to compress: ")
 
-        if not os.path.exists(input_filename):
-            print("File not found! Check the path and try again.")
-            return  # Stop execution if file is missing
-
-        # Run 9 compression attempts, each with 7200 iterations
+        # Run 30 compression attempts, each with 7200 iterations
         best_compressed_filename = run_compression(input_filename)
 
         # Decompress the best compression result
@@ -135,11 +137,6 @@ def main():
 
     elif mode == 2:
         compressed_filename = input("Enter the full name of the compressed file to extract: ")
-
-        if not os.path.exists(compressed_filename):
-            print("File not found! Check the path and try again.")
-            return  # Stop execution if file is missing
-
         decompress_and_restore_paq(compressed_filename)
 
 if __name__ == "__main__":
