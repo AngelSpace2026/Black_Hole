@@ -57,6 +57,10 @@ def decompress_and_restore_paq(compressed_filename):
 
 def find_best_iteration(input_filename, max_iterations):
     """Finds the best compression within a single attempt (out of 7200 iterations)."""
+    if not os.path.exists(input_filename):
+        print("Error: File not found! Check the path and try again.")
+        exit()  # Stops execution
+    
     with open(input_filename, 'rb') as infile:
         file_data = infile.read()
         file_size = len(file_data)
