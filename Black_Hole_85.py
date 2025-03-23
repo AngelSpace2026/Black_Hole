@@ -84,8 +84,8 @@ def run_compression(input_filename):
     best_of_30_compressed_data = None
     best_of_30_ratio = float('inf')
 
-    for i in range(9):
-        print(f"Running compression attempt {i+1}/30 with 7200 iterations...")
+    for i in range(30):
+        print(f"Running compression attempt {i+1}/30 with 300 iterations...")
         compressed_data, compression_ratio = find_best_iteration(input_filename, 300)
 
         if compressed_data and compression_ratio < best_of_30_ratio:
