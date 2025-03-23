@@ -69,7 +69,7 @@ def run_compression(input_filename):
     best_compressed_data = None
     best_ratio = float('inf')
 
-    for i in range(1, 2):  
+    for i in range(1, 9):  
         print(f"Running compression attempt {i} with 7200 iterations...")
         compressed_data, compression_ratio = find_best_iteration(input_filename, 7200)
 
