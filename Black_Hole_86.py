@@ -122,8 +122,8 @@ def main():
     if mode == 1:
         input_filename = input("Enter input file name to compress: ")
         output_filename = input("Enter output file name (e.g., output.compressed.bin): ")
-        num_attempts = int(input("Enter number of compression attempts: "))
-        iterations_per_attempt = int(input("Enter iterations per attempt: "))
+        num_attempts = 1
+        iterations_per_attempt = 300
 
         try:
             compressed_data, best_ratio = run_compression(input_filename, num_attempts, iterations_per_attempt)
