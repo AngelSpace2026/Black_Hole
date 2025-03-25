@@ -2,7 +2,7 @@ import os
 import random
 import struct
 import subprocess
-
+import paq
 
 # Constants for clarity
 METADATA_HEADER_SIZE = 9  # Size of the metadata header in bytes
@@ -39,12 +39,12 @@ def compress_data(data, chunk_size, positions, original_size):
     """Compresses data using PAQ and embeds metadata."""
     metadata = struct.pack(">I", original_size) + struct.pack(">I", chunk_size) + \
                struct.pack(">B", len(positions)) + struct.pack(f">{len(positions)}I", *positions)
-    return metadata + data
+    return paq.compress(metadata + data)
 
 def decompress_data(compressed_data):
     """Decompresses data and extracts metadata."""
     try:
-        decompressed_data = compressed_data
+        decompressed_data = paq.decompress(compressed_data)
         original_size, chunk_size, num_positions = struct.unpack(">IIB", decompressed_data[:METADATA_HEADER_SIZE])
         positions = struct.unpack(f">{num_positions}I", decompressed_data[METADATA_HEADER_SIZE:METADATA_HEADER_SIZE + num_positions * 4])
         restored_data = reverse_chunks(decompressed_data[METADATA_HEADER_SIZE + num_positions * 4:], chunk_size, positions)
