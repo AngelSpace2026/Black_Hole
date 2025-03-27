@@ -3,16 +3,24 @@ import random
 import struct
 import paq
 
-# Constants for clarity
-METADATA_HEADER_SIZE = 9  # Size of the metadata header in bytes
-MAX_POSITIONS = 64       # Maximum number of chunk positions to reverse
-CALCULUS_VALUE = "1-2**15"  # Example transformation formula
-NOT_FOUND_LOG = "numbers_not_found.log"  # Log file to store "numbers not found"
+# Constants
+METADATA_HEADER_SIZE = 9  # Size of metadata in bytes
+MAX_POSITIONS = 64  # Maximum positions for chunk reversal
+NOT_FOUND_LOG = "numbers_not_found.log"  # Log file for missing numbers
 
 def log_not_found(message):
-    """Logs the numbers or issues that were not found to a file."""
+    """Logs missing numbers or issues."""
     with open(NOT_FOUND_LOG, 'a') as log_file:
         log_file.write(message + "\n")
+
+def get_random_chunk_size():
+    """Returns a random chunk size between 2^7 (128) and 2^17 (131072)."""
+    return 2 ** random.randint(7, 17)
+
+def get_random_number():
+    """Returns a random number in the range 1 - (2^x - 1), where x is between 7 and 17."""
+    x = random.randint(7, 17)
+    return random.randint(1, (2**x) - 1)
 
 def reverse_chunks(data, chunk_size, positions):
     """Reverses specified chunks of byte data."""
@@ -24,36 +32,19 @@ def reverse_chunks(data, chunk_size, positions):
             log_not_found(f"Position {pos} not found during chunk reversal.")
     return b"".join(chunked_data)
 
-def add_random_bytes(data, num_insertions, num_bytes=1):
-    """Adds random bytes at random positions."""
-    for _ in range(num_insertions):
-        pos = random.randint(0, max(0, len(data) - num_bytes))
-        data = data[:pos] + os.urandom(num_bytes) + data[pos:]
-    return data
-
-def apply_calculus_formula(data, chunk_size):
-    """Applies a transformation based on the calculus formula."""
-    transformed_data = bytearray()
-    for i in range(0, len(data), chunk_size):
-        chunk = data[i:i + chunk_size]
-        transformed_chunk = bytearray(chunk)
-
-        # Apply bit manipulation or transformation based on the calculus value
-        for j in range(len(chunk)):
-            transformed_chunk[j] = (chunk[j] ^ int(CALCULUS_VALUE)) % 256  # Ensure value stays within 0-255 range
-
-        transformed_data.extend(transformed_chunk)
-
-    return bytes(transformed_data)
+def apply_random_transformation(data):
+    """Applies a transformation using a random number in the range 1 - (2^x - 1)."""
+    transform_value = get_random_number()
+    return bytes((byte ^ transform_value) % 256 for byte in data)
 
 def compress_data(data, chunk_size, positions, original_size):
-    """Compresses data using PAQ and embeds metadata."""
+    """Compresses data using PAQ with metadata."""
     metadata = struct.pack(">I", original_size) + struct.pack(">I", chunk_size) + \
                struct.pack(">B", len(positions)) + struct.pack(f">{len(positions)}I", *positions)
     return paq.compress(metadata + data)
 
 def decompress_data(compressed_data):
-    """Decompresses data and extracts metadata."""
+    """Decompresses data and restores original content."""
     try:
         decompressed_data = paq.decompress(compressed_data)
         original_size, chunk_size, num_positions = struct.unpack(">IIB", decompressed_data[:METADATA_HEADER_SIZE])
@@ -65,35 +56,30 @@ def decompress_data(compressed_data):
         raise Exception(f"Error during decompression: {e}") from None
 
 def find_best_iteration(input_data, max_iterations):
-    """Finds the best compression within a specified number of iterations using a heuristic."""
+    """Finds the best compression by iterating multiple times."""
     best_compression_ratio = float('inf')
     best_compressed_data = None
     best_chunk_size = 0
 
     for _ in range(max_iterations):
-        # Adaptive chunk size: Start with a medium size, adjust based on previous results
-        chunk_size = best_chunk_size or min(128, len(input_data) // 2)  # Default to half the data length
-
+        chunk_size = get_random_chunk_size()
         num_positions = random.randint(0, min(len(input_data) // chunk_size, MAX_POSITIONS))
         positions = sorted(random.sample(range(len(input_data) // chunk_size), num_positions)) if num_positions > 0 else []
 
-        reversed_data = reverse_chunks(input_data, chunk_size, positions)
+        transformed_data = apply_random_transformation(input_data)
+        reversed_data = reverse_chunks(transformed_data, chunk_size, positions)
         compressed_data = compress_data(reversed_data, chunk_size, positions, len(input_data))
         compression_ratio = len(compressed_data) / len(input_data)
 
         if compression_ratio < best_compression_ratio:
             best_compression_ratio = compression_ratio
             best_compressed_data = compressed_data
-            best_chunk_size = chunk_size  # Update best chunk size
-
-        # Adjust chunk size based on compression ratio (example heuristic)
-        if compression_ratio > 0.8: # If compression is poor, try a different chunk size
-            chunk_size = max(1, chunk_size // 2) # Reduce chunk size
+            best_chunk_size = chunk_size
 
     return best_compressed_data, best_compression_ratio
 
 def run_compression(input_filename, num_attempts, iterations_per_attempt):
-    """Runs multiple compression attempts and returns the best result."""
+    """Runs multiple compression attempts to find the best result."""
     if not os.path.exists(input_filename):
         raise FileNotFoundError(f"Error: Input file '{input_filename}' not found.")
 
@@ -143,7 +129,7 @@ def main():
         input_filename = input("Enter input file name to compress: ")
         output_filename = input("Enter output file name (e.g., output.compressed.bin): ")
         num_attempts = 1
-        iterations_per_attempt = 500
+        iterations_per_attempt = 1000
 
         try:
             compressed_data, best_ratio = run_compression(input_filename, num_attempts, iterations_per_attempt)
@@ -155,7 +141,6 @@ def main():
             print(e)
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-
 
     elif mode == 2:
         compressed_filename = input("Enter the full name of the compressed file to decompress: ")
