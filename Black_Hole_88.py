@@ -6,7 +6,6 @@ import paq
 # Constants for clarity
 METADATA_HEADER_SIZE = 9  # Size of the metadata header in bytes
 MAX_POSITIONS = 64       # Maximum number of chunk positions to reverse
-CALCULUS_VALUE = "2**x + 1"  # Transformation formula (example)
 
 def reverse_chunks(data, chunk_size, positions):
     """Reverses specified chunks of byte data."""
@@ -15,25 +14,6 @@ def reverse_chunks(data, chunk_size, positions):
         if 0 <= pos < len(chunked_data):
             chunked_data[pos] = chunked_data[pos][::-1]
     return b"".join(chunked_data)
-
-def add_random_bytes(data, num_insertions, num_bytes=1):
-    """Adds random bytes at random positions."""
-    for _ in range(num_insertions):
-        pos = random.randint(0, max(0, len(data) - num_bytes))
-        data = data[:pos] + os.urandom(num_bytes) + data[pos:]
-    return data
-
-def apply_calculus_formula(data, chunk_size):
-    """Applies a transformation based on the calculus formula."""
-    transformed_data = bytearray()
-    for i in range(0, len(data), chunk_size):
-        chunk = data[i:i + chunk_size]
-        transformed_chunk = bytearray(chunk)
-        # Example transformation: number = 2^x + 1
-        for j in range(len(chunk)):
-            transformed_chunk[j] = (chunk[j] ^ (2 ** (j % 8) + 1)) % 256
-        transformed_data.extend(transformed_chunk)
-    return bytes(transformed_data)
 
 def compress_data(data, chunk_size, positions, original_size):
     """Compresses data using PAQ and embeds metadata."""
@@ -57,23 +37,25 @@ def find_best_iteration(input_data, max_iterations):
     best_compression_ratio = float('inf')
     best_compressed_data = None
     best_chunk_size = 0
-    for _ in range(max_iterations):
-        # Adaptive chunk size: Start with a medium size, adjust based on previous results
-        chunk_size = best_chunk_size or min(128, len(input_data) // 2)  # Default to half the data length
+    for iteration in range(max_iterations):
+        chunk_size = best_chunk_size or min(128, len(input_data) // 2)
         num_positions = random.randint(0, min(len(input_data) // chunk_size, MAX_POSITIONS))
         positions = sorted(random.sample(range(len(input_data) // chunk_size), num_positions)) if num_positions > 0 else []
         reversed_data = reverse_chunks(input_data, chunk_size, positions)
+        
+        print(f"Iteration {iteration + 1}/{max_iterations} - Data before PAQ compression:")
+        print(' '.join(format(byte, '08b') for byte in reversed_data))
+        
         compressed_data = compress_data(reversed_data, chunk_size, positions, len(input_data))
         compression_ratio = len(compressed_data) / len(input_data)
         
         if compression_ratio < best_compression_ratio:
             best_compression_ratio = compression_ratio
             best_compressed_data = compressed_data
-            best_chunk_size = chunk_size  # Update best chunk size
+            best_chunk_size = chunk_size
         
-        # Adjust chunk size based on compression ratio (example heuristic)
-        if compression_ratio > 0.8:  # If compression is poor, try a different chunk size
-            chunk_size = max(1, chunk_size // 2)  # Reduce chunk size
+        if compression_ratio > 0.8:
+            chunk_size = max(1, chunk_size // 2)
     return best_compressed_data, best_compression_ratio
 
 def run_compression(input_filename, num_attempts, iterations_per_attempt):
@@ -125,8 +107,26 @@ def main():
     if mode == 1:
         input_filename = input("Enter input file name to compress: ")
         output_filename = input("Enter output file name (e.g., output.compressed.bin): ")
-        num_attempts = 1
-        iterations_per_attempt = 300
+        
+        while True:
+            try:
+                num_attempts = int(input("Enter the number of compression attempts: "))
+                if num_attempts <= 0:
+                    print("Error: Number of attempts must be a positive integer.")
+                else:
+                    break
+            except ValueError:
+                print("Error: Please enter a valid number.")
+        
+        while True:
+            try:
+                iterations_per_attempt = int(input("Enter the number of iterations per attempt: "))
+                if iterations_per_attempt <= 0:
+                    print("Error: Number of iterations must be a positive integer.")
+                else:
+                    break
+            except ValueError:
+                print("Error: Please enter a valid number.")
         
         try:
             compressed_data, best_ratio = run_compression(input_filename, num_attempts, iterations_per_attempt)
