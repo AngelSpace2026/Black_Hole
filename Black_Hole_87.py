@@ -7,7 +7,7 @@ import paq
 METADATA_HEADER_SIZE = 13  # 9 bytes + 4 bytes (calculus value)
 MAX_POSITIONS = 64
 ATTEMPTS = 1
-ITERATIONS_PER_ATTEMPT = 10000
+ITERATIONS_PER_ATTEMPT = 1000
 
 def reverse_chunks(data, chunk_size, positions):
     """Reverses chunks at specified positions."""
