@@ -1,6 +1,6 @@
 import random
 import os
-import paq # Importing zlib for compression and decompression
+import paq  # Importing paq for compression and decompression
 
 # Define chunk reversal function
 def reverse_chunks(data, chunk_size, positions):
@@ -123,7 +123,7 @@ def find_best_strategy(data, chunk_size, positions):
     best_compression_ratio = float('inf')
     for strategy in strategies:
         transformed_data = strategy(data, chunk_size, positions)
-        compressed_data = zlib.compress(transformed_data)  # Using zlib for compression
+        compressed_data = paq.compress(bytes(transformed_data))  # Ensure transformed_data is bytes
         compression_ratio = len(compressed_data) / len(data)
         if compression_ratio < best_compression_ratio:
             best_compression_ratio = compression_ratio
