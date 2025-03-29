@@ -1,8 +1,8 @@
 import random
 import os
-import paq  # Importing paq for compression and decompression
+import paq  # Ensure PAQ module is available
 
-# Define chunk reversal function
+# 1. Reverse chunks function
 def reverse_chunks(data, chunk_size, positions):
     """Reverses specified chunks of byte data."""
     reversed_data = bytearray(data)
@@ -10,19 +10,19 @@ def reverse_chunks(data, chunk_size, positions):
         start = pos * chunk_size
         end = min((pos + 1) * chunk_size, len(data))
         reversed_data[start:end] = reversed_data[start:end][::-1]
-    return bytes(reversed_data)  # Convert back to bytes before returning
+    return bytes(reversed_data)
 
-# Apply a random transformation
+# 2. Apply random bytes to the data
 def apply_random_bytes(data, num_bytes):
     """Adds random bytes to the data."""
     return data + bytearray(random.getrandbits(8) for _ in range(num_bytes))
 
-# Strategy for subtracting 1 from each byte
-def compress_strategy_3(data, chunk_size, positions):
+# 3. Compress strategy 3 (subtracting 1 from each byte)
+def compress_strategy_3(data):
     """Subtracts 1 from each byte in the data."""
     return bytearray([x - 1 if x > 0 else 0 for x in data])  # Ensure no byte is less than 0
 
-# Function to move bits left or right
+# 4. Function to move bits left or right in the data
 def function_move(data, direction, num_bits):
     """Moves bits left or right in the data."""
     bit_string = ''.join(f'{byte:08b}' for byte in data)
@@ -32,7 +32,7 @@ def function_move(data, direction, num_bits):
         bit_string = bit_string[-num_bits:] + bit_string[:-num_bits]
     return bytearray(int(bit_string[i:i + 8], 2) for i in range(0, len(bit_string), 8))
 
-# Run-length encoding for repeated sequences
+# 5. Apply run-length encoding for repeated sequences
 def apply_run_length_encoding(data):
     """A simple run-length encoding (RLE) for repeated sequences of bytes."""
     compressed_data = bytearray()
@@ -47,106 +47,26 @@ def apply_run_length_encoding(data):
         i += 1
     return bytes(compressed_data)
 
-# Compression strategies
-def compress_strategy_1(data, chunk_size, positions):
-    """Reverses specified chunks of byte data."""
-    return reverse_chunks(data, chunk_size, positions)
+# 6. Compress data with PAQ
+def compress_data(data):
+    """Compresses the data using PAQ compression, adds one byte, and changes the last byte."""
+    compressed_data = paq.compress(data)  # Using PAQ compression instead of zlib
+    last_byte = compressed_data[-1]
+    extra_byte = bytes([random.randint(0, 255)])  # Add random byte
+    compressed_data += extra_byte
+    modified_last_byte = bytes([last_byte ^ 0xFF])  # Modify last byte using XOR
+    compressed_data = compressed_data[:-1] + modified_last_byte
+    return compressed_data, last_byte  # Return modified data and last byte
 
-def compress_strategy_2(data, chunk_size, positions):
-    """Adds random bytes to the data."""
-    num_bytes = random.randint(1, 255)  # Number of bytes to add
-    return apply_random_bytes(data, num_bytes)
+# 7. Decompress data with byte restoration
+def decompress_data(compressed_data, last_byte):
+    """Restores the last byte and decompresses the data."""
+    compressed_data = compressed_data[:-1]  # Remove the extra byte
+    modified_last_byte = compressed_data[-1]
+    compressed_data = compressed_data[:-1] + bytes([modified_last_byte ^ 0xFF])  # Restore the last byte
+    return paq.decompress(compressed_data)  # Using PAQ decompression
 
-def compress_strategy_4(data, chunk_size, positions):
-    """Moves bits left or right in the data."""
-    direction = random.choice(["left", "right"])
-    num_bits = random.randint(1, 8)
-    return function_move(data, direction=direction, num_bits=num_bits)
-
-def compress_strategy_5(data, chunk_size, positions):
-    """Compress sequences of zeros (length 1 to 28)."""
-    return compress_zeros(data)
-
-def compress_strategy_6(data, chunk_size, positions):
-    """Compress sequences of more than 4 repeated bytes."""
-    return compress_repeated_bytes(data)
-
-def compress_strategy_7(data, chunk_size, positions):
-    """Apply additional random chunk size and transformations."""
-    chunk_size = random.randint(2**7, 2**17 - 1)  # Random chunk size in the range 2⁷ to 2¹⁷
-    positions = sorted(random.sample(range(len(data) // chunk_size), random.randint(0, len(data) // chunk_size)))
-    return reverse_chunks(data, chunk_size, positions)
-
-def compress_strategy_8(data, chunk_size, positions):
-    """Apply extra compression heuristics (example: entropy reduction or custom RLE)."""
-    return apply_run_length_encoding(data)
-
-# Placeholder function for compressing zeros
-def compress_zeros(data):
-    """A function to compress sequences of zeros in the data."""
-    compressed_data = bytearray()
-    zero_count = 0
-    for byte in data:
-        if byte == 0:
-            zero_count += 1
-        else:
-            if zero_count > 0:
-                compressed_data.append(0)  # Marker for zeros
-                compressed_data.append(zero_count)  # Store the length of the zero sequence
-                zero_count = 0
-            compressed_data.append(byte)
-    if zero_count > 0:
-        compressed_data.append(0)
-        compressed_data.append(zero_count)
-    return bytes(compressed_data)
-
-# Function to compress repeated byte sequences
-def compress_repeated_bytes(data):
-    """A function to compress repeated byte sequences in the data."""
-    compressed_data = bytearray()
-    i = 0
-    while i < len(data):
-        count = 1
-        while i + 1 < len(data) and data[i] == data[i + 1]:
-            i += 1
-            count += 1
-        compressed_data.append(data[i])  # Append the byte
-        compressed_data.append(count)  # Append the count of repetitions
-        i += 1
-    return bytes(compressed_data)
-
-# Function to find best compression strategy
-def find_best_strategy(data, chunk_size, positions):
-    """Find the best compression strategy by applying all strategies."""
-    strategies = [compress_strategy_1, compress_strategy_2, compress_strategy_3, compress_strategy_4, compress_strategy_5, compress_strategy_6, compress_strategy_7, compress_strategy_8]
-    best_compressed_data = None
-    best_compression_ratio = float('inf')
-    for strategy in strategies:
-        transformed_data = strategy(data, chunk_size, positions)
-        compressed_data = paq.compress(bytes(transformed_data))  # Ensure transformed_data is bytes
-        compression_ratio = len(compressed_data) / len(data)
-        if compression_ratio < best_compression_ratio:
-            best_compression_ratio = compression_ratio
-            best_compressed_data = compressed_data
-    return best_compressed_data, best_compression_ratio
-
-# Function to find best iteration
-def find_best_iteration(input_data, max_iterations):
-    """Finds the best compression by iterating through multiple random transformations."""
-    best_compressed_data = None
-    best_compression_ratio = float('inf')
-    for _ in range(max_iterations):
-        chunk_size = random.randint(2**7, 2**17 - 1)  # Random chunk size
-        max_positions = len(input_data) // chunk_size
-        num_positions = random.randint(0, max_positions)
-        positions = sorted(random.sample(range(max_positions), num_positions))
-        compressed_data, compression_ratio = find_best_strategy(input_data, chunk_size, positions)
-        if compression_ratio < best_compression_ratio:
-            best_compression_ratio = compression_ratio
-            best_compressed_data = compressed_data
-    return best_compressed_data, best_compression_ratio
-
-# Function to process large files
+# 8. Process large files for compression and decompression
 def process_large_file(input_filename, output_filename, mode, attempts=1, iterations=100):
     """Handles large files in chunks and applies compression or decompression."""
     if not os.path.exists(input_filename):
@@ -156,23 +76,47 @@ def process_large_file(input_filename, output_filename, mode, attempts=1, iterat
         file_data = infile.read()
 
     if mode == "compress":
-        best_compressed_data, best_ratio = find_best_iteration(file_data, iterations)
-        if best_compressed_data:
-            with open(output_filename, 'wb') as outfile:
-                outfile.write(best_compressed_data)
-            print(f"Best compression saved as: {output_filename}, ratio: {best_ratio:.4f}")
+        compressed_data, last_byte = compress_data(file_data)
+        with open(output_filename, 'wb') as outfile:
+            outfile.write(compressed_data)
+            outfile.write(bytes([last_byte]))  # Store the last byte for decompression
+        print(f"Compression complete. Output saved to: {output_filename}")
+        return last_byte  # Return the last byte for decompression use
     elif mode == "decompress":
         with open(input_filename, 'rb') as infile:
             compressed_data = infile.read()
+        
+        # The last byte is stored as the last byte in the file
+        last_byte = compressed_data[-1]
+        compressed_data = compressed_data[:-1]  # Remove the last byte
+
         try:
-            restored_data = paq.decompress(compressed_data)  # Using zlib for decompression
+            restored_data = decompress_data(compressed_data, last_byte)
             with open(output_filename, 'wb') as outfile:
                 outfile.write(restored_data)
             print(f"Decompression complete. Restored file: {output_filename}")
         except Exception as e:
             print(f"Error during decompression: {e}")
 
-# Main program
+# 9. Find the best compression strategy by applying various strategies
+def find_best_strategy(data):
+    """Find the best compression strategy by applying all strategies."""
+    strategies = [reverse_chunks, apply_random_bytes, compress_strategy_3, function_move, apply_run_length_encoding]
+    best_compressed_data = None
+    best_compression_ratio = float('inf')
+    for strategy in strategies:
+        # We randomly choose chunk size and positions for testing
+        chunk_size = random.randint(1, 256)
+        positions = sorted(random.sample(range(len(data) // chunk_size), random.randint(0, len(data) // chunk_size)))
+        transformed_data = strategy(data, chunk_size, positions)
+        compressed_data = paq.compress(transformed_data)  # Using PAQ compression
+        compression_ratio = len(compressed_data) / len(data)
+        if compression_ratio < best_compression_ratio:
+            best_compression_ratio = compression_ratio
+            best_compressed_data = compressed_data
+    return best_compressed_data, best_compression_ratio
+
+# Main program to execute based on user input
 def main():
     mode = input("Enter mode (1 for compress, 2 for decompress): ").strip()
     input_filename = input("Enter input file name: ").strip()
