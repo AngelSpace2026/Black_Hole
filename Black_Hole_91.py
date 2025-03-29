@@ -1,6 +1,5 @@
 import random
 import os
-import paq  # Ensure PAQ module is available
 
 # 1. Reverse chunks function
 def reverse_chunks(data, chunk_size, positions):
@@ -50,7 +49,7 @@ def apply_run_length_encoding(data):
 # 6. Compress data with PAQ
 def compress_data(data):
     """Compresses the data using PAQ compression, adds one byte, and changes the last byte."""
-    compressed_data = paq.compress(data)  # Using PAQ compression instead of zlib
+    compressed_data = (data)  # Using PAQ compression instead of zlib
     last_byte = compressed_data[-1]
     extra_byte = bytes([random.randint(0, 255)])  # Add random byte
     compressed_data += extra_byte
@@ -64,7 +63,7 @@ def decompress_data(compressed_data, last_byte):
     compressed_data = compressed_data[:-1]  # Remove the extra byte
     modified_last_byte = compressed_data[-1]
     compressed_data = compressed_data[:-1] + bytes([modified_last_byte ^ 0xFF])  # Restore the last byte
-    return paq.decompress(compressed_data)  # Using PAQ decompression
+    return (compressed_data)  # Using PAQ decompression
 
 # 8. Process large files for compression and decompression
 def process_large_file(input_filename, output_filename, mode, attempts=1, iterations=100):
@@ -109,7 +108,7 @@ def find_best_strategy(data):
         chunk_size = random.randint(1, 256)
         positions = sorted(random.sample(range(len(data) // chunk_size), random.randint(0, len(data) // chunk_size)))
         transformed_data = strategy(data, chunk_size, positions)
-        compressed_data = paq.compress(transformed_data)  # Using PAQ compression
+        compressed_data = compress(transformed_data)  # Using PAQ compression
         compression_ratio = len(compressed_data) / len(data)
         if compression_ratio < best_compression_ratio:
             best_compression_ratio = compression_ratio
