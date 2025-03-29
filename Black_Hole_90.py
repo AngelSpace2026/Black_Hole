@@ -23,7 +23,6 @@ def apply_calculus(data, calculus_value):
 
 def compress_data(data, chunk_size, positions, original_size, calculus_value):
     """Compresses data using PAQ and embeds metadata."""
-    # Adding 7 items for packing (original_size, chunk_size, calculus_value, num_positions, positions)
     metadata = struct.pack(">III", original_size, chunk_size, calculus_value) + \
                struct.pack(">B", len(positions)) + struct.pack(f">{len(positions)}I", *positions)
     return paq.compress(metadata + data)
@@ -44,7 +43,7 @@ def decompress_data(compressed_data):
         raise Exception(f"Error during decompression: {e}") from None
 
 def find_best_iteration(input_data, max_iterations):
-    """Finds the best compression within a specified number of iterations using a heuristic."""
+    """Finds the best compression within a specified number of iterations."""
     best_compression_ratio = float('inf')
     best_compressed_data = None
 
