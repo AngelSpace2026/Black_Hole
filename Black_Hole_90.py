@@ -1,5 +1,6 @@
 import random
 import os
+import paq # Importing zlib for compression and decompression
 
 # Define chunk reversal function
 def reverse_chunks(data, chunk_size, positions):
@@ -83,7 +84,6 @@ def compress_strategy_8(data, chunk_size, positions):
 # Placeholder function for compressing zeros
 def compress_zeros(data):
     """A function to compress sequences of zeros in the data."""
-    # Example: Replace long sequences of zeros with a marker byte (e.g., 0x00) followed by length
     compressed_data = bytearray()
     zero_count = 0
     for byte in data:
@@ -119,18 +119,15 @@ def compress_repeated_bytes(data):
 def find_best_strategy(data, chunk_size, positions):
     """Find the best compression strategy by applying all strategies."""
     strategies = [compress_strategy_1, compress_strategy_2, compress_strategy_3, compress_strategy_4, compress_strategy_5, compress_strategy_6, compress_strategy_7, compress_strategy_8]
-    
     best_compressed_data = None
     best_compression_ratio = float('inf')
-    
     for strategy in strategies:
         transformed_data = strategy(data, chunk_size, positions)
-        compressed_data = transformed_data  # Placeholder, should use an actual compression method
+        compressed_data = zlib.compress(transformed_data)  # Using zlib for compression
         compression_ratio = len(compressed_data) / len(data)
         if compression_ratio < best_compression_ratio:
             best_compression_ratio = compression_ratio
             best_compressed_data = compressed_data
-    
     return best_compressed_data, best_compression_ratio
 
 # Function to find best iteration
@@ -138,18 +135,15 @@ def find_best_iteration(input_data, max_iterations):
     """Finds the best compression by iterating through multiple random transformations."""
     best_compressed_data = None
     best_compression_ratio = float('inf')
-
     for _ in range(max_iterations):
         chunk_size = random.randint(2**7, 2**17 - 1)  # Random chunk size
         max_positions = len(input_data) // chunk_size
         num_positions = random.randint(0, max_positions)
         positions = sorted(random.sample(range(max_positions), num_positions))
-
         compressed_data, compression_ratio = find_best_strategy(input_data, chunk_size, positions)
         if compression_ratio < best_compression_ratio:
             best_compression_ratio = compression_ratio
             best_compressed_data = compressed_data
-
     return best_compressed_data, best_compression_ratio
 
 # Function to process large files
@@ -160,20 +154,18 @@ def process_large_file(input_filename, output_filename, mode, attempts=1, iterat
     
     with open(input_filename, 'rb') as infile:
         file_data = infile.read()
-    
+
     if mode == "compress":
         best_compressed_data, best_ratio = find_best_iteration(file_data, iterations)
         if best_compressed_data:
             with open(output_filename, 'wb') as outfile:
                 outfile.write(best_compressed_data)
             print(f"Best compression saved as: {output_filename}, ratio: {best_ratio:.4f}")
-    
     elif mode == "decompress":
         with open(input_filename, 'rb') as infile:
             compressed_data = infile.read()
-        
         try:
-            restored_data = compressed_data  # Placeholder, decompress logic should be here
+            restored_data = paq.decompress(compressed_data)  # Using zlib for decompression
             with open(output_filename, 'wb') as outfile:
                 outfile.write(restored_data)
             print(f"Decompression complete. Restored file: {output_filename}")
