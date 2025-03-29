@@ -67,6 +67,21 @@ def find_best_iteration(input_data, max_iterations):
 
     return best_compressed_data, best_compression_ratio
 
+def function_move(data, direction="left", num_bits=1):
+    """Moves bits left or right in the data."""
+    if direction == "left":
+        shifted_data = bytearray(data)
+        for i in range(len(shifted_data)):
+            shifted_data[i] = (shifted_data[i] << num_bits) & 0xFF  # Shift left
+    elif direction == "right":
+        shifted_data = bytearray(data)
+        for i in range(len(shifted_data)):
+            shifted_data[i] = (shifted_data[i] >> num_bits) & 0xFF  # Shift right
+    else:
+        raise ValueError("Direction must be 'left' or 'right'.")
+    
+    return bytes(shifted_data)
+
 def process_large_file(input_filename, output_filename, mode, attempts=1, iterations=100):
     """Handles large files in chunks and applies compression or decompression."""
     if not os.path.exists(input_filename):
