@@ -2897,13 +2897,19 @@ class compression:
                 print(f"Decompression complete. Restored file: {output_filename}")
             except Exception as e:
                 print(f"Error during decompression: {e}")
-
 import os
 import binascii
 import math
 import random
 import heapq
 import paq
+import zlib
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+HUFFMAN_THRESHOLD = 1024  # Bytes
 
 class Node:
     def __init__(self, left=None, right=None, symbol=None):
@@ -2930,7 +2936,7 @@ class SmartCompressor:
                 f.write(byte_data)
             return True
         except Exception as e:
-            print(f"Error saving file: {str(e)}")
+            logging.error(f"Error saving file: {str(e)}")
             return False
 
     def file_to_binary(self, filename):
@@ -2938,21 +2944,18 @@ class SmartCompressor:
             with open(filename, 'rb') as f:
                 data = f.read()
                 if not data:
-                    print("Error: Empty file")
+                    logging.error("Error: Empty file")
                     return None
                 binary_str = bin(int(binascii.hexlify(data), 16))[2:]
                 return binary_str.zfill(len(data) * 8)
         except Exception as e:
-            print(f"Error reading file: {str(e)}")
+            logging.error(f"Error reading file: {str(e)}")
             return None
 
     def calculate_frequencies(self, binary_str):
         frequencies = {}
         for bit in binary_str:
-            if bit in frequencies:
-                frequencies[bit] += 1
-            else:
-                frequencies[bit] = 1
+            frequencies[bit] = frequencies.get(bit, 0) + 1
         return frequencies
 
     def build_huffman_tree(self, frequencies):
@@ -2965,13 +2968,13 @@ class SmartCompressor:
         return heap[0][1]
 
     def generate_huffman_codes(self, root, current_code="", codes={}):
-        if isinstance(root, Node) and root.left is None and root.right is None:
+        if root.is_leaf():
             codes[root.symbol] = current_code
             return codes
-        if isinstance(root, Node):
-            self.generate_huffman_codes(root.left, current_code + "0", codes)
-            self.generate_huffman_codes(root.right, current_code + "1", codes)
+        self.generate_huffman_codes(root.left, current_code + "0", codes)
+        self.generate_huffman_codes(root.right, current_code + "1", codes)
         return codes
+
 
     def compress_data_huffman(self, binary_str):
         frequencies = self.calculate_frequencies(binary_str)
@@ -3007,75 +3010,82 @@ class SmartCompressor:
         try:
             decompressed_data = paq.decompress(compressed_data)
             return decompressed_data
-        except zlib.error:
+        except zlib.error as e:
+            logging.error(f"zlib decompression error: {e}")
             return None
 
-    def compress(self, filename):
+    def compress(self, filename, attempts=1, iterations=100):
         if not os.path.exists(filename):
-            print("Error: File not found")
+            logging.error(f"Error: File '{filename}' not found.")
             return
-        print(f"Compressing {filename}...")
+        logging.info(f"Compressing {filename}...")
         with open(filename, 'rb') as f:
             data_bytes = f.read()
-        if len(data_bytes) < 1024:  # Simple heuristic: Use Huffman for small files
+
+        output_file = filename + '.bin'
+
+        if len(data_bytes) < HUFFMAN_THRESHOLD:
             compressed_data = self.compress_data_huffman(self.file_to_binary(filename))
-            output_file = filename + '.bin'  # Changed extension
-            self.binary_to_file(compressed_data, output_file)
+            success = self.binary_to_file(compressed_data, output_file)
+            if not success:
+                logging.error(f"Error saving compressed file: {output_file}")
+                return
         else:
             compressed_data = self.compress_data_zlib(data_bytes)
-            output_file = filename + '.bin'  # Changed extension
             with open(output_file, 'wb') as f:
                 f.write(compressed_data)
+
         orig_size = os.path.getsize(filename)
         comp_size = os.path.getsize(output_file)
         ratio = (comp_size / orig_size) * 100
-        print(f"\nCompression complete!")
-        print(f"Original: {orig_size} bytes")
-        print(f"Compressed: {comp_size} bytes")
-        print(f"Ratio: {ratio:.2f}%")
-        print(f"Saved as: {output_file}")
+        logging.info(f"\nCompression complete!")
+        logging.info(f"Original: {orig_size} bytes")
+        logging.info(f"Compressed: {comp_size} bytes")
+        logging.info(f"Ratio: {ratio:.2f}%")
+        logging.info(f"Saved as: {output_file}")
 
     def decompress(self, filename):
         if not os.path.exists(filename):
-            print("Error: File not found")
+            logging.error(f"Error: File '{filename}' not found.")
             return
-        print(f"Decompressing {filename}...")
+        logging.info(f"Decompressing {filename}...")
         try:
             with open(filename, 'rb') as f:
                 compressed_data = f.read()
-            #Try zlib first (more likely for larger files)
-            decompressed_data = self.decompress_data_zlib(compressed_data)
-            if decompressed_data:
-                output_file = filename[:-4] #Remove .bin
-                with open(output_file, 'wb') as f:
-                    f.write(decompressed_data)
-                print("Decompressed using Black_Hole_91.")
-            else:
-                #Try huffman if zlib fails
-                compressed_binary = self.file_to_binary(filename)
-                if compressed_binary:
-                    decompressed_data = self.decompress_data_huffman(compressed_binary)
-                    if decompressed_data:
-                        output_file = filename[:-4] #Remove .bin
-                        self.binary_to_file(decompressed_data, output_file)
-                        print("Decompressed using Huffman.")
-                    else:
-                        print("Error: Decompression failed (both zlib and Huffman).")
+            output_file = filename[:-4] #Remove .bin extension
+
+            try:
+                decompressed_data = self.decompress_data_zlib(compressed_data)
+                if decompressed_data:
+                    with open(output_file, 'wb') as f:
+                        f.write(decompressed_data)
+                    logging.info("Decompressed using Black_Hole_91.")
+                    return
+            except Exception as e:
+                logging.warning(f"zlib decompression failed: {e}. Trying Huffman...")
+
+
+            compressed_binary = self.file_to_binary(filename)
+            if compressed_binary:
+                decompressed_data = self.decompress_data_huffman(compressed_binary)
+                if decompressed_data:
+                    self.binary_to_file(decompressed_data, output_file)
+                    logging.info("Decompressed using Huffman.")
                 else:
-                    print("Error: Decompression failed (both zlib and Huffman).")
+                    logging.error("Error: Huffman decompression failed.")
+                    return
+            else:
+                logging.error("Error: Huffman decompression failed.")
+                return
         except Exception as e:
-            print(f"An error occurred during decompression: {e}")
+            logging.exception(f"An error occurred during decompression: {e}")
 
         comp_size = os.path.getsize(filename)
-        try:
-            decomp_size = os.path.getsize(output_file)
-            print(f"\nDecompression complete!")
-            print(f"Compressed: {comp_size} bytes")
-            print(f"Decompressed: {decomp_size} bytes")
-            print(f"Saved as: {output_file}")
-        except NameError:
-            print("Decompression failed. No file created.")
-
+        decomp_size = os.path.getsize(output_file)
+        logging.info(f"\nDecompression complete!")
+        logging.info(f"Compressed: {comp_size} bytes")
+        logging.info(f"Decompressed: {decomp_size} bytes")
+        logging.info(f"Saved as: {output_file}")
 
 
 def main():
@@ -3088,11 +3098,19 @@ def main():
         choice = input("Select option (1-3): ").strip()
         if choice == '1':
             filename = input("Enter file to compress: ").strip()
-            if filename: #Check if filename is not empty
-                compressor.compress(filename)
+            if filename:
+                try:
+                    attempts = int(input("Enter number of attempts (1 or more): "))
+                    iterations = int(input("Enter number of iterations (1 or more): "))
+                    if attempts < 1 or iterations < 1:
+                        print("Attempts and iterations must be 1 or greater.")
+                        continue
+                    compressor.compress(filename, attempts, iterations)
+                except ValueError:
+                    print("Invalid input. Please enter integers for attempts and iterations.")
         elif choice == '2':
             filename = input("Enter file to decompress: ").strip()
-            if filename: #Check if filename is not empty
+            if filename:
                 compressor.decompress(filename)
         elif choice == '3':
             print("Exiting...")
