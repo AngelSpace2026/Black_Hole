@@ -3049,7 +3049,7 @@ class SmartCompressor:
                 output_file = filename[:-4] #Remove .bin
                 with open(output_file, 'wb') as f:
                     f.write(decompressed_data)
-                print("Decompressed using zlib.")
+                print("Decompressed using Black_Hole_91.")
             else:
                 #Try huffman if zlib fails
                 compressed_binary = self.file_to_binary(filename)
