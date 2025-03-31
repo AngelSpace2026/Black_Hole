@@ -3,6 +3,7 @@ import os
 import paq  # Ensure PAQ module is available
 import math
 import binascii
+import re
 
 # 1. Reverse chunks function
 def reverse_chunks(data, chunk_size, positions):
@@ -117,12 +118,7 @@ def strategy_9(data):
         else:
             return None
 
-    En_number = int(input("Point(s) of the intresection(s) 2-28? "))
-    if En_number<2:
-        En_number=2
-    if En_number>28:
-        En_number=28
-
+    En_number = 13  # Always use En=13
     INFO = bin(int(binascii.hexlify(data), 16))[2:]
     long_F = len(INFO)
     if INFO[long_F-8]!="00000000":
@@ -240,6 +236,7 @@ def strategy_9(data):
                 INFO = CL3+CL2 + CL1 + TUPLE
                 compressed_data = INFO
                 return compressed_data
+
 
 # 11. Find the best compression strategy by applying various strategies
 def find_best_strategy(data):
