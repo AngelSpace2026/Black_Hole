@@ -2903,10 +2903,7 @@ import binascii
 import math
 import random
 import heapq
-import time
 import paq
-from os import path
-
 
 class Node:
     def __init__(self, left=None, right=None, symbol=None):
@@ -2917,51 +2914,36 @@ class Node:
     def is_leaf(self):
         return self.left is None and self.right is None
 
-
-class Compressor:
-    def compress(self, data):
-        raise NotImplementedError
-
-    def decompress(self, data):
-        raise NotImplementedError
-
-
-class BlackHoleCompressor(Compressor):
+class SmartCompressor:
     def __init__(self):
-        self.name = "blackhole"  # Add this line to define the name
         self.max_intersections = 28
 
-    def compress(self, data_bytes):
-        binary_str = self.bytes_to_binary(data_bytes)
-        if binary_str is None:
-            return None  # Handle empty data
-        compressed_str = self.compress_data_huffman(binary_str)
-        return compressed_str.encode()  # Encode to bytes for consistency
-
-    def decompress(self, compressed_bytes):
-        compressed_str = compressed_bytes.decode()
-        decompressed_str = self.decompress_data_huffman(compressed_str)
-        return self.binary_to_bytes(decompressed_str)
-
-    def bytes_to_binary(self, data_bytes):
+    def binary_to_file(self, binary_data, filename):
         try:
-            binary_str = bin(int(binascii.hexlify(data_bytes), 16))[2:]
-            return binary_str.zfill(len(data_bytes) * 8)
-        except Exception as e:
-            print(f"Error converting bytes to binary: {str(e)}")
-            return None
-
-    def binary_to_bytes(self, binary_str):
-        try:
-            n = int(binary_str, 2)
-            num_bytes = (len(binary_str) + 7) // 8
+            n = int(binary_data, 2)
+            num_bytes = (len(binary_data) + 7) // 8
             hex_str = "%0*x" % (num_bytes * 2, n)
             if len(hex_str) % 2 != 0:
                 hex_str = '0' + hex_str
             byte_data = binascii.unhexlify(hex_str)
-            return byte_data
+            with open(filename, 'wb') as f:
+                f.write(byte_data)
+            return True
         except Exception as e:
-            print(f"Error converting binary to bytes: {str(e)}")
+            print(f"Error saving file: {str(e)}")
+            return False
+
+    def file_to_binary(self, filename):
+        try:
+            with open(filename, 'rb') as f:
+                data = f.read()
+                if not data:
+                    print("Error: Empty file")
+                    return None
+                binary_str = bin(int(binascii.hexlify(data), 16))[2:]
+                return binary_str.zfill(len(data) * 8)
+        except Exception as e:
+            print(f"Error reading file: {str(e)}")
             return None
 
     def calculate_frequencies(self, binary_str):
@@ -3017,84 +2999,83 @@ class BlackHoleCompressor(Compressor):
                 current_code = ""
         return decompressed_str
 
+    def compress_data_zlib(self, data_bytes):
+        compressed_data = paq.compress(data_bytes)
+        return compressed_data
 
-class ZlibCompressor(Compressor):
-    def __init__(self):
-        self.name = "zlib"  # Add this line to define the name
-
-    def compress(self, data):
-        return paq.compress(data)
-
-    def decompress(self, data):
-        return paq.decompress(data)
-
-
-class AlgorithmSelector:
-    def __init__(self):
-        self.compressors = {
-            "blackhole": BlackHoleCompressor(),
-            "zlib": ZlibCompressor(),
-            # ... add other compressors
-        }
-
-    def select_algorithm(self, filename, data_bytes):
-        # Implement your algorithm selection logic here
-        # (e.g., based on file size, type, or more advanced analysis)
-        if len(data_bytes) < 1024:
-            return self.compressors["blackhole"]
-        else:
-            return self.compressors["zlib"]  # Default
-
-
-class SmartCompressor:
-    def __init__(self):
-        self.selector = AlgorithmSelector()
+    def decompress_data_zlib(self, compressed_data):
+        try:
+            decompressed_data = paq.decompress(compressed_data)
+            return decompressed_data
+        except zlib.error:
+            return None
 
     def compress(self, filename):
-        if not path.exists(filename):
+        if not os.path.exists(filename):
             print("Error: File not found")
             return
-
         print(f"Compressing {filename}...")
         with open(filename, 'rb') as f:
             data_bytes = f.read()
-
-        compressor = self.selector.select_algorithm(filename, data_bytes)
-        if compressor:
-            compressed_data = compressor.compress(data_bytes)
-            output_filename = filename + ".bin"  # Fixed extension
-            with open(output_filename, 'wb') as f:
+        if len(data_bytes) < 1024:  # Simple heuristic: Use Huffman for small files
+            compressed_data = self.compress_data_huffman(self.file_to_binary(filename))
+            output_file = filename + '.bin'  # Changed extension
+            self.binary_to_file(compressed_data, output_file)
+        else:
+            compressed_data = self.compress_data_zlib(data_bytes)
+            output_file = filename + '.bin'  # Changed extension
+            with open(output_file, 'wb') as f:
                 f.write(compressed_data)
-            print(f"Compression complete. Output saved to: {output_filename}")
+        orig_size = os.path.getsize(filename)
+        comp_size = os.path.getsize(output_file)
+        ratio = (comp_size / orig_size) * 100
+        print(f"\nCompression complete!")
+        print(f"Original: {orig_size} bytes")
+        print(f"Compressed: {comp_size} bytes")
+        print(f"Ratio: {ratio:.2f}%")
+        print(f"Saved as: {output_file}")
 
     def decompress(self, filename):
-        if not path.exists(filename):
+        if not os.path.exists(filename):
             print("Error: File not found")
             return
-
         print(f"Decompressing {filename}...")
-        with open(filename, 'rb') as f:
-            compressed_data = f.read()
-
         try:
-            compressor_name = filename.split(".")[-1]
-            compressor = self.selector.compressors.get(compressor_name)
-            if not compressor:
-                print(f"Error: Unsupported compression method: {compressor_name}")
-                return
-
-            decompressed_data = compressor.decompress(compressed_data)
-            if decompressed_data is None:
-                print(f"Error: Decompression failed using {compressor_name}")
-                return
-
-            output_filename = filename[:-len(f".{compressor_name}")]
-            with open(output_filename, 'wb') as f:
-                f.write(decompressed_data)
-            print(f"Decompression complete. Restored file: {output_filename}")
-
+            with open(filename, 'rb') as f:
+                compressed_data = f.read()
+            #Try zlib first (more likely for larger files)
+            decompressed_data = self.decompress_data_zlib(compressed_data)
+            if decompressed_data:
+                output_file = filename[:-4] #Remove .bin
+                with open(output_file, 'wb') as f:
+                    f.write(decompressed_data)
+                print("Decompressed using zlib.")
+            else:
+                #Try huffman if zlib fails
+                compressed_binary = self.file_to_binary(filename)
+                if compressed_binary:
+                    decompressed_data = self.decompress_data_huffman(compressed_binary)
+                    if decompressed_data:
+                        output_file = filename[:-4] #Remove .bin
+                        self.binary_to_file(decompressed_data, output_file)
+                        print("Decompressed using Huffman.")
+                    else:
+                        print("Error: Decompression failed (both zlib and Huffman).")
+                else:
+                    print("Error: Decompression failed (both zlib and Huffman).")
         except Exception as e:
             print(f"An error occurred during decompression: {e}")
+
+        comp_size = os.path.getsize(filename)
+        try:
+            decomp_size = os.path.getsize(output_file)
+            print(f"\nDecompression complete!")
+            print(f"Compressed: {comp_size} bytes")
+            print(f"Decompressed: {decomp_size} bytes")
+            print(f"Saved as: {output_file}")
+        except NameError:
+            print("Decompression failed. No file created.")
+
 
 
 def main():
@@ -3107,11 +3088,11 @@ def main():
         choice = input("Select option (1-3): ").strip()
         if choice == '1':
             filename = input("Enter file to compress: ").strip()
-            if filename:  # Check if filename is not empty
+            if filename: #Check if filename is not empty
                 compressor.compress(filename)
         elif choice == '2':
             filename = input("Enter file to decompress: ").strip()
-            if filename:  # Check if filename is not empty
+            if filename: #Check if filename is not empty
                 compressor.decompress(filename)
         elif choice == '3':
             print("Exiting...")
@@ -3119,9 +3100,5 @@ def main():
         else:
             print("Invalid choice, try again")
 
-
 if __name__ == "__main__":
     main()
-
-
-
