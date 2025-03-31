@@ -118,7 +118,7 @@ def strategy_9(data):
         else:
             return None
 
-    En_number = 13  # Always use En=13
+    En_number = 28  # Always use En=28
     INFO = bin(int(binascii.hexlify(data), 16))[2:]
     long_F = len(INFO)
     if INFO[long_F-8]!="00000000":
