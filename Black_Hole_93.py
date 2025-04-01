@@ -1,136 +1,185 @@
 import os
 import random
 import paq
+from binascii import unhexlify
 
-# Function 1: Reverse data in chunks
+# 1. Reverse data in chunks
 def reverse_chunk(data, chunk_size):
     return data[::-1]
 
-# Function 2: Add random noise to data
+# 2. Add random noise to data
 def add_random_noise(data, noise_level=10):
-    return bytes([byte ^ random.randint(0, noise_level) for byte in data])
+    return bytes([b ^ random.randint(0, noise_level) for b in data])
 
-# Function 3: Subtract 1 from each byte
+# 3. Subtract 1 from each byte
 def subtract_1_from_each_byte(data):
-    return bytes([(byte - 1) % 256 for byte in data])
+    return bytes([(b - 1) % 256 for b in data])
 
-# Function 4: Move bits left (rotate)
+# 4. Rotate bits left
 def move_bits_left(data, n):
-    n = n % 8  # Ensure n is within the range of 0 to 7
-    return bytes([(byte << n) & 0xFF | (byte >> (8 - n)) & 0xFF for byte in data])
+    n = n % 8
+    return bytes([((b << n) | (b >> (8 - n))) & 0xff for b in data])
 
-# Function 5: Move bits right (rotate)
+# 5. Rotate bits right
 def move_bits_right(data, n):
-    n = n % 8  # Ensure n is within the range of 0 to 7
-    return bytes([(byte >> n) & 0xFF | (byte << (8 - n)) & 0xFF for byte in data])
+    n = n % 8
+    return bytes([((b >> n) | (b << (8 - n))) & 0xff for b in data])
 
-# Function 6: Apply random transformations
+# 6. Apply random transformations
 def apply_random_transforms(data, num_transforms=5):
-    transforms = [reverse_chunk, add_random_noise, subtract_1_from_each_byte, move_bits_left, move_bits_right]
+    transforms = [
+        lambda d: reverse_chunk(d, random.randint(1, len(d))),
+        add_random_noise,
+        subtract_1_from_each_byte,
+        lambda d: move_bits_left(d, random.randint(1, 7)),
+        lambda d: move_bits_right(d, random.randint(1, 7))
+    ]
     for _ in range(num_transforms):
-        transform = random.choice(transforms)
-        if transform == reverse_chunk:  # For reverse_chunk, we need a chunk_size argument
-            chunk_size = random.randint(1, len(data))  # Random chunk size
-            data = transform(data, chunk_size)
-        elif transform in [subtract_1_from_each_byte]:  # These do not need an extra argument
-            data = transform(data)
-        else:  # These transformations require a random shift value
-            data = transform(data, random.randint(1, 8))
+        data = random.choice(transforms)(data)
     return data
 
-# Function 7: Compress data using zlib
+# 7. Compress using PAQ
 def compress_data(data):
     return paq.compress(data)
 
-# Function 8: Decompress data using zlib
-def decompress_data(data):
-    return paq.decompress(data)
+# 8. Strict PAQ extraction
+def extract_paq(data):
+    try:
+        return paq.decompress(data), "valid"
+    except paq.PAQError as e:
+        if "corrupt" in str(e).lower():
+            return data, "corrupt"
+        return data, "error"
 
-# Function 9: Run compression with multiple attempts and iterations
+# 9. Compression with multiple attempts
 def compress_with_iterations(data, attempts, iterations):
-    best_compressed = data
+    best = data
     best_size = len(data)
     
     for _ in range(attempts):
+        current = data
         for _ in range(iterations):
-            transformed_data = apply_random_transforms(data)
-            compressed_data = compress_data(transformed_data)
+            transformed = apply_random_transforms(current)
+            compressed = compress_data(transformed)
             
-            if len(compressed_data) < best_size:
-                best_compressed = compressed_data
-                best_size = len(compressed_data)
+            if len(compressed) < best_size:
+                best = compressed
+                best_size = len(compressed)
+        current = best
     
-    return best_compressed
+    return best
 
-# Function 10: Extract compressed data with 006300 check
+# 10. Your exact extraction logic
 def extract_data(data):
-    # Check if first 3 bytes are 0x00, 0x63, 0x00
-    if len(data) >= 3 and data[:3] == b'\x00\x63\x00':
-        try:
-            # Try to decompress with paq
-            return decompress_data(data)
-        except:
-            # If decompression fails, return original
-            return data
-    else:
-        # If first 3 bytes don't match, return original
+    PAQ_MAGIC = unhexlify('006300')
+    
+    if len(data) >= 3 and data[:3] == PAQ_MAGIC:
+        result, status = extract_paq(data)
+        if status == "valid":
+            print("Valid PAQ archive - extracted successfully")
+            return result
+        print("Corrupt PAQ archive - returning original")
         return data
+    
+    print("No PAQ header found - returning original")
+    return data
 
-# Function 11: Show the user a menu for compressing or extracting
+# 11. Display menu
 def show_menu():
-    print("Select operation:")
-    print("1. Compress")
-    print("2. Extract")
-    return input("Enter 1 for compression or 2 for extraction: ")
+    print("\nFile Processor Menu:")
+    print("1. Compress file")
+    print("2. Extract file")
+    print("3. Exit")
+    while True:
+        choice = input("Select option (1-3): ").strip()
+        if choice in ('1', '2', '3'):
+            return choice
+        print("Invalid input, please try again")
 
-# Function 12: Get user input for file names
+# 12. Get file paths
 def get_file_names():
-    input_file = input("Enter input file name: ")
-    output_file = input("Enter output file name: ")
-    return input_file, output_file
+    while True:
+        input_file = input("Enter input file path: ").strip()
+        if os.path.exists(input_file):
+            break
+        print("File not found! Please try again")
+    return input_file, input("Enter output file path: ").strip()
 
-# Function 13: Get user input for number of attempts and iterations
+# 13. Get compression parameters
 def get_attempts_and_iterations():
     attempts = 1
     iterations = 7200*15
     return attempts, iterations
 
-# Function 14: Read file
-def read_file(file_name):
-    with open(file_name, 'rb') as f:
-        return f.read()
+# 14. Read file with error handling
+def read_file(filename):
+    try:
+        with open(filename, 'rb') as f:
+            return f.read()
+    except Exception as e:
+        print(f"Error reading file: {e}")
+        return None
 
-# Function 15: Write file
-def write_file(file_name, data):
-    with open(file_name, 'wb') as f:
-        f.write(data)
+# 15. Write file with error handling
+def write_file(filename, data):
+    try:
+        with open(filename, 'wb') as f:
+            f.write(data)
+        return True
+    except Exception as e:
+        print(f"Error writing file: {e}")
+        return False
 
-# Function 16: Compression pipeline
+# 16. Compression workflow
 def compression_pipeline(input_file, output_file, attempts, iterations):
     data = read_file(input_file)
-    best_compressed = compress_with_iterations(data, attempts, iterations)
-    write_file(output_file, best_compressed)
-    print(f"File compressed and saved as {output_file}")
-
-# Function 17: Extraction pipeline
-def extraction_pipeline(input_file, output_file):
-    compressed_data = read_file(input_file)
-    extracted_data = extract_data(compressed_data)
-    write_file(output_file, extracted_data)
-    print(f"File extracted and saved as {output_file}")
-
-# Function 18: Main function for user interface
-def main():
-    operation = show_menu()
-    input_file, output_file = get_file_names()
+    if not data:
+        return False
     
-    if operation == '1':  # Compress
-        attempts, iterations = get_attempts_and_iterations()
-        compression_pipeline(input_file, output_file, attempts, iterations)
-    elif operation == '2':  # Extract
-        extraction_pipeline(input_file, output_file)
-    else:
-        print("Invalid option selected.")
+    print("Compressing... (this may take a while)")
+    compressed = compress_with_iterations(data, attempts, iterations)
+    
+    if write_file(output_file, compressed):
+        orig_size = len(data)
+        new_size = len(compressed)
+        ratio = (1 - (new_size / orig_size)) * 100
+        print(f"Success! Compression ratio: {ratio:.2f}%")
+        return True
+    return False
+
+# 17. Extraction workflow
+def extraction_pipeline(input_file, output_file):
+    data = read_file(input_file)
+    if not data:
+        return False
+    
+    print("Extracting...")
+    extracted = extract_data(data)
+    
+    if write_file(output_file, extracted):
+        print("Extraction complete")
+        return True
+    return False
+
+# 18. Main program
+def main():
+    while True:
+        choice = show_menu()
+        
+        if choice == '1':
+            input_file, output_file = get_file_names()
+            attempts, iterations = get_attempts_and_iterations()
+            if not compression_pipeline(input_file, output_file, attempts, iterations):
+                print("Compression failed")
+        
+        elif choice == '2':
+            input_file, output_file = get_file_names()
+            if not extraction_pipeline(input_file, output_file):
+                print("Extraction failed")
+        
+        elif choice == '3':
+            print("Exiting program...")
+            break
 
 if __name__ == "__main__":
     main()
