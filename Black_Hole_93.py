@@ -62,11 +62,19 @@ def compress_with_iterations(data, attempts, iterations):
     
     return best_compressed
 
-# Function 10: Extract compressed data (reverse transformations and decompress)
+# Function 10: Extract compressed data with 006300 check
 def extract_data(data):
-    decompressed_data = decompress_data(data)
-    # Assuming the transformations were reversible, add reverse logic here if needed
-    return decompressed_data
+    # Check if first 3 bytes are 0x00, 0x63, 0x00
+    if len(data) >= 3 and data[:3] == b'\x00\x63\x00':
+        try:
+            # Try to decompress with paq
+            return decompress_data(data)
+        except:
+            # If decompression fails, return original
+            return data
+    else:
+        # If first 3 bytes don't match, return original
+        return data
 
 # Function 11: Show the user a menu for compressing or extracting
 def show_menu():
