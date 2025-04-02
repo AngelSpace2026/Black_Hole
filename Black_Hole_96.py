@@ -10,13 +10,9 @@ C = 299792458.0          # Speed of light (m/s)
 G = 6.67430e-11          # Gravitational constant
 HBAR = 1.054571817e-34   # Reduced Planck constant
 K_B = 1.380649e-23       # Boltzmann constant
-M_P = 1.67262192369e-27  # Proton mass (kg)
 
-# Derived Planck units
-PLANCK_LENGTH = math.sqrt(HBAR * G / C**3)
-
-# ===== Practical Compression System =====
-def reverse_chunk(data):
+# ===== Compression System =====
+def reverse_chunk(data, chunk_size):
     return data[::-1]
 
 def add_random_noise(data, noise_level=10):
@@ -33,32 +29,23 @@ def move_bits_right(data, n):
     n = n % 8
     return bytes((b >> n) | ((b << (8 - n)) & 0xFF) for b in data)
 
-def apply_random_transforms(data, num_transforms=5):
-    transforms = [
-        reverse_chunk,
-        add_random_noise,
-        subtract_1_from_each_byte,
-        lambda d: move_bits_left(d, random.randint(1, 8)),
-        lambda d: move_bits_right(d, random.randint(1, 8))
-    ]
-    for _ in range(num_transforms):
-        data = random.choice(transforms)(data)
-    return data
-
 def compress_data(data):
-    return paq.compress(data)  # Zlib compression after PAQ placeholder
+    return paq.compress(data)  # Use zlib compression
 
 def decompress_data(data):
-    return paq.decompress(data)
+    return paq.decompress(data)  # Use zlib decompression
 
-def compress_with_iterations(data, attempts=1, iterations=7200*15):
+def extract_with_regularity(data):
+    return decompress_data(reverse_chunk(data, len(data)))
+
+def compress_with_iterations(data, attempts=1, iterations=7200):
     best = compress_data(data)
     best_size = len(best)
     
     for _ in range(attempts):
         current = data
         for _ in range(iterations):
-            transformed = apply_random_transforms(current)
+            transformed = reverse_chunk(current, len(current))
             compressed = compress_data(transformed)
             
             if len(compressed) < best_size:
@@ -69,81 +56,87 @@ def compress_with_iterations(data, attempts=1, iterations=7200*15):
     
     return best
 
-def extract_data(data):
-    return decompress_data(data)
+# ===== Black Hole Physics =====
+class DangerLevel(Enum):
+    SAFE = auto()
+    WARNING = auto()
+    CRITICAL = auto()
+    COSMIC = auto()
+
+class BlackHoleCompressor:
+    def __init__(self, data):
+        self.data = data
+        self.bits = len(data) * 8
+        self.energy = self.bits * K_B * 1.4e32
+        self.mass = self.energy / C**2
+        self.rs = 2 * G * self.mass / C**2  # Schwarzschild radius
+
+    def _check_danger(self):
+        if self.mass > 1e50: return DangerLevel.COSMIC
+        if self.mass > 1e30: return DangerLevel.CRITICAL
+        if self.rs <= 1e-35: return DangerLevel.WARNING
+        return DangerLevel.SAFE
+
+    def compress(self):
+        danger = self._check_danger()
+        print(f"\nData Size: {len(self.data)} bytes")
+        print(f"Required Energy: {self.energy:.3e} J")
+        print(f"Equivalent Mass: {self.mass:.3e} kg")
+        print(f"Schwarzschild Radius: {self.rs:.3e} m")
+
+        if danger == DangerLevel.COSMIC:
+            print("\n COSMIC DOOMSDAY: Galaxy cluster collapsing!")
+        elif danger == DangerLevel.CRITICAL:
+            print("\n STELLAR COLLAPSE: Neutron star density reached!")
+        elif danger == DangerLevel.WARNING:
+            print("\n QUANTUM FOAM: Micro black hole evaporation imminent")
+        else:
+            print("\n Insufficient energy for singularity")
 
 # ===== Main Application =====
 def main():
     while True:
         print("\n1. Compress File\n2. Extract File\n3. Extract with Regularity\n4. Black Hole Sim\n5. Exit")
-        choice = input("Choice: ").strip()
-        
+        choice = input("Choice: ")
+
         if choice == '1':
-            in_file = input("Input file: ").strip()
-            out_file = input("Output file: ").strip()
-            
-            try:
-                with open(in_file, 'rb') as f:
-                    data = f.read()
-                
-                compressed = compress_with_iterations(data)
-                
-                with open(out_file, 'wb') as f:
-                    f.write(compressed)
-                
-                print(f"Compressed {len(data)} → {len(compressed)} bytes")
-            except FileNotFoundError:
-                print("Error: File not found.")
-            
+            in_file = input("Input file: ")
+            out_file = input("Output file: ")
+            with open(in_file, 'rb') as f:
+                data = f.read()
+            compressed = compress_with_iterations(data, 1, 7200*15)
+            with open(out_file, 'wb') as f:
+                f.write(compressed)
+            print(f"Compressed {len(data)} → {len(compressed)} bytes")
+
         elif choice == '2':
-            in_file = input("Input compressed file: ").strip()
-            out_file = input("Output file: ").strip()
-            
-            try:
-                with open(in_file, 'rb') as f:
-                    data = f.read()
-                
-                decompressed = extract_data(data)
-                
-                with open(out_file, 'wb') as f:
-                    f.write(decompressed)
-                
-                print(f"Extracted {len(decompressed)} bytes")
-            except FileNotFoundError:
-                print("Error: File not found.")
-            except zlib.error:
-                print("Error: Invalid compressed file.")
-                
+            in_file = input("Input compressed file: ")
+            out_file = input("Output file: ")
+            with open(in_file, 'rb') as f:
+                data = f.read()
+            extracted = decompress_data(data)
+            with open(out_file, 'wb') as f:
+                f.write(extracted)
+            print(f"Extracted: {len(extracted)} bytes")
+
         elif choice == '3':
-            in_file = input("Input compressed file: ").strip()
-            out_file = input("Output file: ").strip()
-            
-            try:
-                with open(in_file, 'rb') as f:
-                    data = f.read()
-                
-                decompressed = extract_data(data)  # Placeholder for regularity-based extraction
-                
-                with open(out_file, 'wb') as f:
-                    f.write(decompressed)
-                
-                print(f"Extracted with Regularity: {len(decompressed)} bytes")
-            except FileNotFoundError:
-                print("Error: File not found.")
-            except zlib.error:
-                print("Error: Invalid compressed file.")
-                
+            in_file = input("Input compressed file: ")
+            out_file = input("Output file: ")
+            with open(in_file, 'rb') as f:
+                data = f.read()
+            extracted = extract_with_regularity(data)
+            with open(out_file, 'wb') as f:
+                f.write(extracted)
+            print(f"Extracted with Regularity: {len(extracted)} bytes")
+
         elif choice == '4':
-            try:
-                size = int(input("Data size (bytes): ").strip())
-                data = os.urandom(size)
-                BlackHoleCompressor(data).compress()
-            except ValueError:
-                print("Invalid input. Please enter a number.")
-            
+            size = int(input("Data size (bytes): "))
+            data = os.urandom(size)
+            BlackHoleCompressor(data).compress()
+
         elif choice == '5':
             break
-        
+
         else:
             print("Invalid choice")
 
