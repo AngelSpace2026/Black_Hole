@@ -1,8 +1,9 @@
 import os
 import random
-import paq
+import paq  # Ensure you have a compatible PAQ module
 
-# Transformation functions (same as before)
+# Transformation functions
+
 def reverse_chunk(data, chunk_size):
     return data[::-1]
 
@@ -14,61 +15,64 @@ def subtract_1_from_each_byte(data):
 
 def move_bits_left(data, n):
     n = n % 8
-    return bytes([(byte << n) & 0xFF | (byte >> (8 - n)) & 0xFF for byte in data])
+    return bytes([(byte << n & 0xFF) | (byte >> (8 - n)) & 0xFF for byte in data])
 
 def move_bits_right(data, n):
     n = n % 8
-    return bytes([(byte >> n) & 0xFF | (byte << (8 - n)) & 0xFF for byte in data])
+    return bytes([(byte >> n & 0xFF) | (byte << (8 - n)) & 0xFF for byte in data])
 
-# Always compress with PAQ after transformations
+# Apply random transformations
 def apply_random_transforms(data, num_transforms=5):
-    transforms = [reverse_chunk, add_random_noise, subtract_1_from_each_byte, 
-                 move_bits_left, move_bits_right]
+    transforms = [
+        (reverse_chunk, True),
+        (add_random_noise, True),
+        (subtract_1_from_each_byte, False),
+        (move_bits_left, True),
+        (move_bits_right, True)
+    ]
+    
     for _ in range(num_transforms):
-        transform = random.choice(transforms)
-        if transform == reverse_chunk:
-            data = transform(data, random.randint(1, len(data)))
-        elif transform in [subtract_1_from_each_byte]:
-            data = transform(data)
+        transform, needs_param = random.choice(transforms)
+        if needs_param:
+            if transform == reverse_chunk:
+                param = random.randint(1, len(data))
+            else:
+                param = random.randint(1, 8)
+            data = transform(data, param)
         else:
-            data = transform(data, random.randint(1, 8))
-    # Always compress with PAQ after transformations
+            data = transform(data)
+    
     return paq.compress(data)
 
-# Compression now always uses PAQ
+# Compression using PAQ
 def compress_data(data):
     return paq.compress(data)
 
-# Decompression always uses PAQ
+# Decompression using PAQ
 def decompress_data(data):
     return paq.decompress(data)
 
-# Modified compression with iterations to always use PAQ
+# Iterative compression with best result selection
 def compress_with_iterations(data, attempts, iterations):
-    best_compressed = paq.compress(data)  # Start with straight PAQ compression
+    best_compressed = paq.compress(data)
     best_size = len(best_compressed)
-    
+
     for _ in range(attempts):
         current_data = data
         for _ in range(iterations):
-            # Apply transforms and compress with PAQ
             transformed = apply_random_transforms(current_data)
-            
-            # Keep the best compression
             if len(transformed) < best_size:
                 best_compressed = transformed
                 best_size = len(best_compressed)
-            
-            # For next iteration, decompress to continue transforming
             current_data = paq.decompress(transformed)
     
     return best_compressed
 
-# Extraction is just PAQ decompression
+# Extraction
 def extract_data(data):
     return paq.decompress(data)
 
-# UI functions remain the same
+# UI functions
 def show_menu():
     print("1. Compress")
     print("2. Extract")
@@ -81,7 +85,7 @@ def get_file_names():
 
 def get_attempts_and_iterations():
     attempts = 1
-    iterations = 2**32
+    iterations = 7200*15
     return attempts, iterations
 
 def read_file(file_name):
@@ -107,7 +111,6 @@ def extraction_pipeline(input_file, output_file):
 def main():
     choice = show_menu()
     in_file, out_file = get_file_names()
-    
     if choice == '1':
         attempts, iterations = get_attempts_and_iterations()
         compression_pipeline(in_file, out_file, attempts, iterations)
