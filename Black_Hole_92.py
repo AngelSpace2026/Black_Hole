@@ -1,5 +1,8 @@
 import os
 import paq
+import random
+import time
+from tqdm import tqdm #For progress bar
 
 def rle_encode(data):
     if not data:
@@ -72,6 +75,7 @@ def apply_random_transformations(data, num_transforms=5):
                 return data  # Return original data if transformation fails.
     return data
 
+
 def compress_data(data):
     try:
         return paq.compress(data)
@@ -90,15 +94,20 @@ def compress_with_iterations(data, attempts, iterations):
     best_compressed = paq.compress(data)
     best_size = len(best_compressed)
 
-    for _ in range(attempts):
-        current_data = data
-        for _ in range(iterations):
-            rle_encoded = rle_encode(current_data)
-            compressed_data = paq.compress(rle_encoded) # Compress the RLE encoded data
-            if len(compressed_data) < best_size:
-                best_compressed = compressed_data
-                best_size = len(compressed_data)
-            current_data = rle_decode(paq.decompress(compressed_data)) # Decode before next iteration
+    for i in tqdm(range(attempts), desc="Compression Attempts"): # progress bar
+        try:
+            current_data = data
+            for j in tqdm(range(iterations), desc=f"Iteration {i+1}", leave=False): # nested progress bar
+                rle_encoded = rle_encode(current_data)
+                compressed_data = paq.compress(rle_encoded)
+                if len(compressed_data) < best_size:
+                    best_compressed = compressed_data
+                    best_size = len(compressed_data)
+                current_data = rle_decode(paq.decompress(compressed_data))
+        except Exception as e:
+            print(f"Error during iteration {i+1}: {e}")
+            # Consider a more sophisticated error handling strategy here, possibly retrying or skipping.
+
 
     return best_compressed
 
@@ -118,6 +127,7 @@ def handle_file_io(func, file_name, data=None):
         print(f"Error during file I/O: {e}")
         return None
 
+
 def get_positive_integer(prompt):
     while True:
         try:
@@ -134,13 +144,15 @@ def main():
     in_file, out_file = input("Input file: "), input("Output file: ")
 
     if choice == '1':
-        attempts = 1
-        iterations = 100
+        attempts = get_positive_integer("Enter number of compression attempts: ")
+        iterations = get_positive_integer("Enter number of iterations per attempt: ")
         data = handle_file_io(lambda x: x, in_file)
         if data:
+            start_time = time.time()
             compressed_data = compress_with_iterations(data, attempts, iterations)
+            end_time = time.time()
             handle_file_io(lambda x: x, out_file, compressed_data)
-            print(f"Compressed to {out_file}")
+            print(f"Compressed to {out_file} in {end_time - start_time:.2f} seconds")
 
     elif choice == '2':
         data = handle_file_io(decompress_data, in_file)
