@@ -53,7 +53,7 @@ def move_bits_right(data, n):
     return bytes([(byte >> n & 0xFF) | (byte << (8 - n)) & 0xFF for byte in data])
 
 # Apply random transformations to the data
-def apply_random_transformations(data, num_transforms=5):
+def apply_random_transformations(data, num_transforms=10):
     transforms = [
         (reverse_chunk, True),
         (add_random_noise, True),
@@ -61,7 +61,7 @@ def apply_random_transformations(data, num_transforms=5):
         (move_bits_left, True),
         (move_bits_right, True)
     ]
-    marker = 0  # 3-bit marker for tracking transformations
+    marker = 0  # 4-bit marker for tracking transformations
     transformed_data = data
     
     for i in range(num_transforms):
@@ -70,21 +70,21 @@ def apply_random_transformations(data, num_transforms=5):
             param = random.randint(1, 8) if transform != reverse_chunk else random.randint(1, len(data))
             try:
                 transformed_data = transform(transformed_data, param)
-                marker |= (1 << (i % 3))  # Set 3-bit marker based on applied transformation
+                marker |= (1 << (i % 4))  # Set 4-bit marker based on applied transformation
             except Exception as e:
                 print(f"Error applying transformation: {e}")
                 return transformed_data, marker
         else:
             try:
                 transformed_data = transform(transformed_data)
-                marker |= (1 << (i % 3))  # Set 3-bit marker based on applied transformation
+                marker |= (1 << (i % 4))  # Set 4-bit marker based on applied transformation
             except Exception as e:
                 print(f"Error applying transformation: {e}")
                 return transformed_data, marker
 
     return transformed_data, marker  # Return the transformed data and the marker
 
-# Extra move function with 1-bit flag for each transformation
+# Extra move function with 256-bit variations
 def extra_move(data):
     """Apply 256 variations every 256 bits, add a byte and move bits to find the best variant."""
     block_size = 256
