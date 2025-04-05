@@ -4,7 +4,6 @@ import time
 import paq  # Replace with real PAQ module if needed
 from tqdm import tqdm  # For progress bar
 
-
 def rle_encode(data):
     if not data:
         return b""
@@ -16,14 +15,13 @@ def rle_encode(data):
             count += 1
         else:
             encoded.append((prev_byte, count))
-            prev_byte = data[i]
-            count = 1
+        prev_byte = data[i]
+        count = 1
     encoded.append((prev_byte, count))
     result = b""
     for byte, count in encoded:
         result += byte.to_bytes(1, 'big') + count.to_bytes(2, 'big')
     return result
-
 
 def rle_decode(data):
     decoded = []
@@ -35,28 +33,22 @@ def rle_decode(data):
         i += 3
     return bytes(decoded)
 
-
 def reverse_chunk(data, chunk_size):
     return data[::-1]
-
 
 def add_random_noise(data, noise_level=10):
     return bytes([byte ^ random.randint(0, noise_level) for byte in data])
 
-
 def subtract_1_from_each_byte(data):
     return bytes([(byte - 1) % 256 for byte in data])
-
 
 def move_bits_left(data, n):
     n = n % 8
     return bytes([(byte << n & 0xFF) | (byte >> (8 - n)) & 0xFF for byte in data])
 
-
 def move_bits_right(data, n):
     n = n % 8
     return bytes([(byte >> n & 0xFF) | (byte << (8 - n)) & 0xFF for byte in data])
-
 
 def apply_random_transformations(data, num_transforms=5):
     transforms = [
@@ -74,21 +66,22 @@ def apply_random_transformations(data, num_transforms=5):
                 data = transform(data, param)
             except Exception as e:
                 print(f"Error applying transformation: {e}")
+                return data
         else:
             try:
                 data = transform(data)
             except Exception as e:
                 print(f"Error applying transformation: {e}")
+                return data
     return data
 
-
+# Replace with paq module or keep using zlib for testing
 def compress_data(data):
     try:
         return paq.compress(data)
     except Exception as e:
         print(f"Error during compression: {e}")
         return data
-
 
 def decompress_data(data):
     try:
@@ -97,15 +90,13 @@ def decompress_data(data):
         print(f"Error during decompression: {e}")
         return data
 
-
 def extra_move(data):
-    chunk_size = 4096
+    chunk_size = 512  # 4096 bits = 512 bytes
     best_data = bytearray()
     for i in range(0, len(data), chunk_size):
         chunk = data[i:i + chunk_size]
         best_chunk = chunk
         best_score = len(compress_data(chunk))
-
         for _ in range(16):  # 16 variations
             transformed = bytearray(chunk)
             for j in range(len(transformed)):
@@ -116,18 +107,15 @@ def extra_move(data):
                 else:
                     shift = random.randint(1, 7)
                     transformed[j] = ((transformed[j] >> shift) | (transformed[j] << (8 - shift))) & 0xFF
-
-            comp_size = len(compress_data(transformed))
+            comp_size = len(compress_data(bytes(transformed)))  # Convert to bytes here
             if comp_size < best_score:
                 best_score = comp_size
                 best_chunk = transformed
-
         best_data += best_chunk
     return bytes(best_data)
 
-
 def compress_with_iterations(data, attempts, iterations):
-    best_compressed = compress_data(data)
+    best_compressed = compress_data(bytes(data))  # Ensure data is in bytes initially
     best_size = len(best_compressed)
 
     for i in tqdm(range(attempts), desc="Compression Attempts"):
@@ -137,15 +125,15 @@ def compress_with_iterations(data, attempts, iterations):
                 current_data = apply_random_transformations(current_data)
                 current_data = extra_move(current_data)
                 rle_encoded = rle_encode(current_data)
-                compressed_data = compress_data(rle_encoded)
+                compressed_data = compress_data(bytes(rle_encoded))  # Convert bytearray to bytes here
                 if len(compressed_data) < best_size:
                     best_compressed = compressed_data
                     best_size = len(compressed_data)
                 current_data = rle_decode(decompress_data(compressed_data))
         except Exception as e:
             print(f"Error during iteration {i + 1}: {e}")
-    return best_compressed
 
+    return best_compressed
 
 def handle_file_io(func, file_name, data=None):
     try:
@@ -163,7 +151,6 @@ def handle_file_io(func, file_name, data=None):
         print(f"Error during file I/O: {e}")
         return None
 
-
 def get_positive_integer(prompt):
     while True:
         try:
@@ -174,7 +161,6 @@ def get_positive_integer(prompt):
                 print("Please enter a positive integer.")
         except ValueError:
             print("Invalid input. Please enter an integer.")
-
 
 def main():
     choice = input("Choose (1: Compress, 2: Extract): ")
@@ -198,7 +184,6 @@ def main():
             print(f"Extracted to {out_file}")
     else:
         print("Invalid choice")
-
 
 if __name__ == "__main__":
     main()
