@@ -70,9 +70,9 @@ def apply_random_transformations(data, num_transforms=10):
 
     return transformed_data, marker, rle_applied
 
-# Extra move function with 256-bit variations
+# Extra move function with 256x256 variations
 def extra_move(data):
-    """Apply 256 variations every 256 bits, add a byte and move bits to find the best variant."""
+    """Apply 256x256 variations every 256 bits, add a byte and move bits to find the best variant."""
     block_size = 256
     best_data = data
     best_size = len(paq.compress(data))
@@ -83,13 +83,14 @@ def extra_move(data):
         best_block = block
         best_block_size = best_size
 
-        for b in range(256):  # 256 variations
-            modified = bytes([(byte + b) % 256 for byte in block])
-            modified = move_bits_left(modified, b % 8)
-            try_compressed = paq.compress(modified)
-            if len(try_compressed) < best_block_size:
-                best_block = modified
-                best_block_size = len(try_compressed)
+        for b1 in range(256):  # First 256 variations
+            for b2 in range(256):  # Second 256 variations
+                modified = bytes([(byte + b1) % 256 for byte in block])
+                modified = move_bits_left(modified, b2 % 8)  # Apply bit shift after byte variation
+                try_compressed = paq.compress(modified)
+                if len(try_compressed) < best_block_size:
+                    best_block = modified
+                    best_block_size = len(try_compressed)
 
         result.extend(best_block)
 
