@@ -2,7 +2,7 @@ import os
 import paq
 import random
 import time
-from tqdm import tqdm  # For progress bar
+from tqdm import tqdm
 
 def rle_encode(data):
     if not data:
@@ -50,39 +50,48 @@ def move_bits_right(data, n):
     n = n % 8
     return bytes([(byte >> n & 0xFF) | (byte << (8 - n)) & 0xFF for byte in data])
 
+# Map transformations to 3-bit IDs
+TRANSFORMATIONS = {
+    0: (reverse_chunk, True),
+    1: (add_random_noise, True),
+    2: (subtract_1_from_each_byte, False),
+    3: (move_bits_left, True),
+    4: (move_bits_right, True)
+}
+
 def apply_random_transformations(data, num_transforms=5):
-    transforms = [
-        (reverse_chunk, True, b'\xA1'),
-        (add_random_noise, True, b'\xA2'),
-        (subtract_1_from_each_byte, False, b'\xA3'),
-        (move_bits_left, True, b'\xA4'),
-        (move_bits_right, True, b'\xA5')
-    ]
+    markers = []
     for _ in range(num_transforms):
-        transform, needs_param, marker = random.choice(transforms)
-        if needs_param:
-            param = random.randint(1, 8) if transform != reverse_chunk else random.randint(1, len(data))
-            try:
+        transform_id = random.choice(list(TRANSFORMATIONS.keys()))
+        transform, needs_param = TRANSFORMATIONS[transform_id]
+        try:
+            if needs_param:
+                param = random.randint(1, 8) if transform != reverse_chunk else random.randint(1, len(data))
                 data = transform(data, param)
-                data += marker  # Append marker byte
-            except Exception as e:
-                print(f"Error applying transformation: {e}")
-                return data
-        else:
-            try:
+            else:
                 data = transform(data)
-                data += marker
-            except Exception as e:
-                print(f"Error applying transformation: {e}")
-                return data
-    return data
+            markers.append(transform_id)
+        except Exception as e:
+            print(f"Error applying transformation {transform_id}: {e}")
+            continue
+    return data, markers
+
+def pack_3bit_markers(markers):
+    bits = ''.join(format(m, '03b') for m in markers)
+    # Pad to full bytes
+    bits += '0' * ((8 - len(bits) % 8) % 8)
+    return int(bits, 2).to_bytes(len(bits) // 8, 'big')
+
+def unpack_3bit_markers(data, num_markers):
+    bits = bin(int.from_bytes(data, 'big'))[2:].zfill(len(data) * 8)
+    return [int(bits[i:i+3], 2) for i in range(0, num_markers * 3, 3)]
 
 def extra_move(data):
-    """Apply 256 variations every 256 bits, add a byte and move bits to find the best variant."""
     block_size = 256
     best_data = data
     best_size = len(paq.compress(data))
     result = bytearray()
+    flag_bits = []
 
     for i in range(0, len(data), block_size):
         block = data[i:i + block_size]
@@ -97,26 +106,16 @@ def extra_move(data):
             if len(try_compressed) < best_block_size:
                 best_block = modified
                 best_block_size = len(try_compressed)
-                best_flag = b
+                best_flag = b  # Store which variation was best
 
-        result.append(best_flag % 256)  # Add 1-byte flag
         result.extend(best_block)
+        flag_bits.append(best_flag % 2)  # Store 1-bit flag
 
-    return bytes(result)
-
-def compress_data(data):
-    try:
-        return paq.compress(data)
-    except Exception as e:
-        print(f"Error during PAQ compression: {e}")
-        return data
-
-def decompress_data(data):
-    try:
-        return paq.decompress(data)
-    except Exception as e:
-        print(f"Error during PAQ decompression: {e}")
-        return data
+    # Pack flags into bytes
+    flags_binary = ''.join(str(bit) for bit in flag_bits)
+    flags_binary += '0' * ((8 - len(flags_binary) % 8) % 8)
+    flag_bytes = int(flags_binary, 2).to_bytes(len(flags_binary) // 8, 'big')
+    return bytes(result) + flag_bytes
 
 def compress_with_iterations(data, attempts, iterations):
     best_compressed = paq.compress(data)
@@ -125,9 +124,11 @@ def compress_with_iterations(data, attempts, iterations):
     for i in tqdm(range(attempts), desc="Compression Attempts"):
         try:
             current_data = data
+            all_markers = []
             for j in tqdm(range(iterations), desc=f"Iteration {i+1}", leave=False):
                 rle_encoded = rle_encode(current_data)
-                transformed = apply_random_transformations(rle_encoded)
+                transformed, markers = apply_random_transformations(rle_encoded)
+                all_markers.extend(markers)
                 improved = extra_move(transformed)
                 compressed_data = paq.compress(improved)
 
@@ -135,12 +136,22 @@ def compress_with_iterations(data, attempts, iterations):
                     best_compressed = compressed_data
                     best_size = len(compressed_data)
 
-                # Prepare next round (simulate decompression and reverse RLE)
                 current_data = rle_decode(paq.decompress(compressed_data))
+
+            marker_data = pack_3bit_markers(all_markers)
+            best_compressed += marker_data  # append markers at the end
+
         except Exception as e:
             print(f"Error during iteration {i+1}: {e}")
 
     return best_compressed
+
+def decompress_data(data):
+    try:
+        return paq.decompress(data)
+    except Exception as e:
+        print(f"Error during PAQ decompression: {e}")
+        return data
 
 def handle_file_io(func, file_name, data=None):
     try:
