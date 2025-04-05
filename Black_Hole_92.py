@@ -52,31 +52,33 @@ def move_bits_right(data, n):
 
 def apply_random_transformations(data, num_transforms=5):
     transforms = [
-        (reverse_chunk, True),
-        (add_random_noise, True),
-        (subtract_1_from_each_byte, False),
-        (move_bits_left, True),
-        (move_bits_right, True)
+        (reverse_chunk, True, b'\xA1'),
+        (add_random_noise, True, b'\xA2'),
+        (subtract_1_from_each_byte, False, b'\xA3'),
+        (move_bits_left, True, b'\xA4'),
+        (move_bits_right, True, b'\xA5')
     ]
     for _ in range(num_transforms):
-        transform, needs_param = random.choice(transforms)
+        transform, needs_param, marker = random.choice(transforms)
         if needs_param:
             param = random.randint(1, 8) if transform != reverse_chunk else random.randint(1, len(data))
             try:
                 data = transform(data, param)
+                data += marker  # Append marker byte
             except Exception as e:
                 print(f"Error applying transformation: {e}")
                 return data
         else:
             try:
                 data = transform(data)
+                data += marker
             except Exception as e:
                 print(f"Error applying transformation: {e}")
                 return data
     return data
 
 def extra_move(data):
-    """Apply 256 variations every 256 bits, add a byte and move bits to find the best variant. Append 1-bit flag."""
+    """Apply 256 variations every 256 bits, add a byte and move bits to find the best variant."""
     block_size = 256
     best_data = data
     best_size = len(paq.compress(data))
@@ -86,6 +88,7 @@ def extra_move(data):
         block = data[i:i + block_size]
         best_block = block
         best_block_size = best_size
+        best_flag = 0
 
         for b in range(256):
             modified = bytes([(byte + b) % 256 for byte in block])
@@ -94,10 +97,11 @@ def extra_move(data):
             if len(try_compressed) < best_block_size:
                 best_block = modified
                 best_block_size = len(try_compressed)
+                best_flag = b
 
+        result.append(best_flag % 256)  # Add 1-byte flag
         result.extend(best_block)
 
-    result.append(0b00000001)  # 1-bit flag as a byte
     return bytes(result)
 
 def compress_data(data):
@@ -122,25 +126,17 @@ def compress_with_iterations(data, attempts, iterations):
         try:
             current_data = data
             for j in tqdm(range(iterations), desc=f"Iteration {i+1}", leave=False):
-                rle_encoded = rle_encode(current_data) + b'\xAA'  # Add marker byte after RLE
-                transformed = apply_random_transformations(rle_encoded) + b'\xBB'  # Add marker after transform
-                improved = extra_move(transformed)  # Flag added in extra_move
+                rle_encoded = rle_encode(current_data)
+                transformed = apply_random_transformations(rle_encoded)
+                improved = extra_move(transformed)
                 compressed_data = paq.compress(improved)
 
                 if len(compressed_data) < best_size:
                     best_compressed = compressed_data
                     best_size = len(compressed_data)
 
-                # Prepare for next iteration
-                decompressed = paq.decompress(compressed_data)
-                if decompressed.endswith(b'\x01'):  # Remove flag
-                    decompressed = decompressed[:-1]
-                try:
-                    rle_decoded = rle_decode(decompressed.replace(b'\xAA', b'').replace(b'\xBB', b''))
-                    current_data = rle_decoded
-                except Exception as e:
-                    print(f"RLE decode error: {e}")
-                    break
+                # Prepare next round (simulate decompression and reverse RLE)
+                current_data = rle_decode(paq.decompress(compressed_data))
         except Exception as e:
             print(f"Error during iteration {i+1}: {e}")
 
