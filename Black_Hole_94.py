@@ -74,17 +74,14 @@ def apply_random_transformations(data, num_transforms=5):
                 data = transform(data, param)
             except Exception as e:
                 print(f"Error applying transformation: {e}")
-                return data
         else:
             try:
                 data = transform(data)
             except Exception as e:
                 print(f"Error applying transformation: {e}")
-                return data
     return data
 
 
-# Replace with paq module or keep using zlib for testing
 def compress_data(data):
     try:
         return paq.compress(data)
@@ -102,9 +99,8 @@ def decompress_data(data):
 
 
 def extra_move(data):
-    chunk_size = 512  # 4096 bits = 512 bytes
+    chunk_size = 4096
     best_data = bytearray()
-
     for i in range(0, len(data), chunk_size):
         chunk = data[i:i + chunk_size]
         best_chunk = chunk
@@ -127,7 +123,6 @@ def extra_move(data):
                 best_chunk = transformed
 
         best_data += best_chunk
-
     return bytes(best_data)
 
 
@@ -149,7 +144,6 @@ def compress_with_iterations(data, attempts, iterations):
                 current_data = rle_decode(decompress_data(compressed_data))
         except Exception as e:
             print(f"Error during iteration {i + 1}: {e}")
-
     return best_compressed
 
 
@@ -197,13 +191,11 @@ def main():
             end_time = time.time()
             handle_file_io(lambda x: x, out_file, compressed_data)
             print(f"Compressed to {out_file} in {end_time - start_time:.2f} seconds")
-
     elif choice == '2':
         data = handle_file_io(decompress_data, in_file)
         if data:
             handle_file_io(lambda x: x, out_file, data)
             print(f"Extracted to {out_file}")
-
     else:
         print("Invalid choice")
 
