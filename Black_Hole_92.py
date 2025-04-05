@@ -61,24 +61,30 @@ def apply_random_transformations(data, num_transforms=5):
         (move_bits_left, True),
         (move_bits_right, True)
     ]
-    for _ in range(num_transforms):
+    marker = 0  # 3-bit marker for tracking transformations
+    transformed_data = data
+    
+    for i in range(num_transforms):
         transform, needs_param = random.choice(transforms)
         if needs_param:
             param = random.randint(1, 8) if transform != reverse_chunk else random.randint(1, len(data))
             try:
-                data = transform(data, param)
+                transformed_data = transform(transformed_data, param)
+                marker |= (1 << (i % 3))  # Set 3-bit marker based on applied transformation
             except Exception as e:
                 print(f"Error applying transformation: {e}")
-                return data
+                return transformed_data, marker
         else:
             try:
-                data = transform(data)
+                transformed_data = transform(transformed_data)
+                marker |= (1 << (i % 3))  # Set 3-bit marker based on applied transformation
             except Exception as e:
                 print(f"Error applying transformation: {e}")
-                return data
-    return data
+                return transformed_data, marker
 
-# Extra move function with 1-bit flag
+    return transformed_data, marker  # Return the transformed data and the marker
+
+# Extra move function with 1-bit flag for each transformation
 def extra_move(data):
     """Apply 256 variations every 256 bits, add a byte and move bits to find the best variant."""
     block_size = 256
@@ -101,6 +107,8 @@ def extra_move(data):
 
         result.extend(best_block)
 
+    # Add 1-bit flag for modified block (0 if unmodified, 1 if modified)
+    result.append(1 if best_data != result else 0)
     return bytes(result)
 
 # Compression and Decompression using PAQ
@@ -128,7 +136,7 @@ def compress_with_iterations(data, attempts, iterations):
             current_data = data
             for j in tqdm(range(iterations), desc=f"Iteration {i+1}", leave=False):
                 rle_encoded = rle_encode(current_data)
-                transformed = apply_random_transformations(rle_encoded)
+                transformed, marker = apply_random_transformations(rle_encoded)
                 improved = extra_move(transformed)
                 compressed_data = paq.compress(improved)
 
