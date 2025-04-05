@@ -4,36 +4,6 @@ import random
 import time
 from tqdm import tqdm  # For progress bar
 
-# RLE Encoding and Decoding
-def rle_encode(data):
-    if not data:
-        return b""
-    encoded = []
-    count = 1
-    prev_byte = data[0]
-    for i in range(1, len(data)):
-        if data[i] == prev_byte:
-            count += 1
-        else:
-            encoded.append((prev_byte, count))
-            prev_byte = data[i]
-            count = 1
-    encoded.append((prev_byte, count))
-    result = b""
-    for byte, count in encoded:
-        result += byte.to_bytes(1, 'big') + count.to_bytes(2, 'big')
-    return result
-
-def rle_decode(data):
-    decoded = []
-    i = 0
-    while i < len(data):
-        byte = data[i]
-        count = int.from_bytes(data[i+1:i+3], 'big')
-        decoded.extend([byte] * count)
-        i += 3
-    return bytes(decoded)
-
 # Reversible Transformation Functions
 def reverse_chunk(data, chunk_size):
     return data[::-1]
@@ -75,14 +45,10 @@ def apply_random_transformations(data, num_transforms=10):
                 print(f"Error applying transformation: {e}")
                 return transformed_data, marker
         else:
-            try:
-                transformed_data = transform(transformed_data)
-                marker |= (1 << (i % 4))  # Set 4-bit marker based on applied transformation
-            except Exception as e:
-                print(f"Error applying transformation: {e}")
-                return transformed_data, marker
+            transformed_data = transform(transformed_data)  # For transformations that don't need parameters
+            marker |= (1 << (i % 4))  # Mark applied transformation
 
-    return transformed_data, marker  # Return the transformed data and the marker
+    return transformed_data, marker
 
 # Extra move function with 256-bit variations
 def extra_move(data):
@@ -135,8 +101,7 @@ def compress_with_iterations(data, attempts, iterations):
         try:
             current_data = data
             for j in tqdm(range(iterations), desc=f"Iteration {i+1}", leave=False):
-                rle_encoded = rle_encode(current_data)
-                transformed, marker = apply_random_transformations(rle_encoded)
+                transformed, marker = apply_random_transformations(current_data)
                 improved = extra_move(transformed)
                 compressed_data = paq.compress(improved)
 
@@ -145,7 +110,7 @@ def compress_with_iterations(data, attempts, iterations):
                     best_size = len(compressed_data)
 
                 # Prepare next round
-                current_data = rle_decode(paq.decompress(compressed_data))
+                current_data = paq.decompress(compressed_data)
         except Exception as e:
             print(f"Error during iteration {i+1}: {e}")
 
