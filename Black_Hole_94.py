@@ -1,9 +1,11 @@
 import os
 import random
 import time
-import paq  # Replace with real PAQ module if needed
+import paq# Use zlib as a placeholder for PAQ compression
 from tqdm import tqdm  # For progress bar
+from concurrent.futures import ProcessPoolExecutor  # For parallelism
 
+# RLE Encoding and Decoding
 def rle_encode(data):
     if not data:
         return b""
@@ -33,6 +35,7 @@ def rle_decode(data):
         i += 3
     return bytes(decoded)
 
+# Transformation Functions
 def reverse_chunk(data, chunk_size):
     return data[::-1]
 
@@ -50,6 +53,7 @@ def move_bits_right(data, n):
     n = n % 8
     return bytes([(byte >> n & 0xFF) | (byte << (8 - n)) & 0xFF for byte in data])
 
+# Apply Random Transformations
 def apply_random_transformations(data, num_transforms=5):
     transforms = [
         (reverse_chunk, True),
@@ -75,29 +79,29 @@ def apply_random_transformations(data, num_transforms=5):
                 return data
     return data
 
-# Replace with paq module or keep using zlib for testing
+# Compression and Decompression
 def compress_data(data):
     try:
-        return paq.compress(data)
+        return paq.compress(data)  # Placeholder for PAQ compression
     except Exception as e:
         print(f"Error during compression: {e}")
         return data
 
 def decompress_data(data):
     try:
-        return paq.decompress(data)
+        return paq.decompress(data)  # Placeholder for PAQ decompression
     except Exception as e:
         print(f"Error during decompression: {e}")
         return data
 
-def extra_move(data):
-    chunk_size = 512  # 4096 bits = 512 bytes
+# Transformation Exploration for Best Score
+def extra_move(data, chunk_size=512):
     best_data = bytearray()
     for i in range(0, len(data), chunk_size):
         chunk = data[i:i + chunk_size]
         best_chunk = chunk
         best_score = len(compress_data(chunk))
-        for _ in range(16):  # 16 variations
+        for _ in range(16):  # 16 variations per chunk
             transformed = bytearray(chunk)
             for j in range(len(transformed)):
                 transformed[j] = (transformed[j] + random.randint(0, 255)) % 256
@@ -107,15 +111,16 @@ def extra_move(data):
                 else:
                     shift = random.randint(1, 7)
                     transformed[j] = ((transformed[j] >> shift) | (transformed[j] << (8 - shift))) & 0xFF
-            comp_size = len(compress_data(bytes(transformed)))  # Convert to bytes here
+            comp_size = len(compress_data(bytes(transformed)))
             if comp_size < best_score:
                 best_score = comp_size
                 best_chunk = transformed
         best_data += best_chunk
     return bytes(best_data)
 
+# Compression with Multiple Iterations and Transformations
 def compress_with_iterations(data, attempts, iterations):
-    best_compressed = compress_data(bytes(data))  # Ensure data is in bytes initially
+    best_compressed = compress_data(bytes(data))
     best_size = len(best_compressed)
 
     for i in tqdm(range(attempts), desc="Compression Attempts"):
@@ -125,7 +130,7 @@ def compress_with_iterations(data, attempts, iterations):
                 current_data = apply_random_transformations(current_data)
                 current_data = extra_move(current_data)
                 rle_encoded = rle_encode(current_data)
-                compressed_data = compress_data(bytes(rle_encoded))  # Convert bytearray to bytes here
+                compressed_data = compress_data(bytes(rle_encoded))
                 if len(compressed_data) < best_size:
                     best_compressed = compressed_data
                     best_size = len(compressed_data)
@@ -135,6 +140,7 @@ def compress_with_iterations(data, attempts, iterations):
 
     return best_compressed
 
+# File I/O
 def handle_file_io(func, file_name, data=None):
     try:
         if data is None:
@@ -151,6 +157,7 @@ def handle_file_io(func, file_name, data=None):
         print(f"Error during file I/O: {e}")
         return None
 
+# User Input for Positive Integer
 def get_positive_integer(prompt):
     while True:
         try:
@@ -162,6 +169,7 @@ def get_positive_integer(prompt):
         except ValueError:
             print("Invalid input. Please enter an integer.")
 
+# Main Function
 def main():
     choice = input("Choose (1: Compress, 2: Extract): ")
     in_file = input("Input file: ")
