@@ -2,7 +2,7 @@ import os
 import paq
 import random
 import time
-from tqdm import tqdm #For progress bar
+from tqdm import tqdm  # For progress bar
 
 def rle_encode(data):
     if not data:
@@ -20,7 +20,7 @@ def rle_encode(data):
     encoded.append((prev_byte, count))
     result = b""
     for byte, count in encoded:
-        result += byte.to_bytes(1, 'big') + count.to_bytes(2, 'big') # Use 2 bytes for count
+        result += byte.to_bytes(1, 'big') + count.to_bytes(2, 'big')
     return result
 
 def rle_decode(data):
@@ -28,9 +28,9 @@ def rle_decode(data):
     i = 0
     while i < len(data):
         byte = data[i]
-        count = int.from_bytes(data[i+1:i+3], 'big') # Read 2 bytes for count
+        count = int.from_bytes(data[i+1:i+3], 'big')
         decoded.extend([byte] * count)
-        i += 3 #Increment by 3 because count uses 2 bytes
+        i += 3
     return bytes(decoded)
 
 def reverse_chunk(data, chunk_size):
@@ -66,15 +66,39 @@ def apply_random_transformations(data, num_transforms=5):
                 data = transform(data, param)
             except Exception as e:
                 print(f"Error applying transformation: {e}")
-                return data  # Return original data if transformation fails.
+                return data
         else:
             try:
                 data = transform(data)
             except Exception as e:
                 print(f"Error applying transformation: {e}")
-                return data  # Return original data if transformation fails.
+                return data
     return data
 
+def extra_move(data):
+    """Apply 256 variations every 256 bits, add a byte and move bits to find the best variant. Append 1-bit flag."""
+    block_size = 256
+    best_data = data
+    best_size = len(paq.compress(data))
+    result = bytearray()
+
+    for i in range(0, len(data), block_size):
+        block = data[i:i + block_size]
+        best_block = block
+        best_block_size = best_size
+
+        for b in range(256):
+            modified = bytes([(byte + b) % 256 for byte in block])
+            modified = move_bits_left(modified, b % 8)
+            try_compressed = paq.compress(modified)
+            if len(try_compressed) < best_block_size:
+                best_block = modified
+                best_block_size = len(try_compressed)
+
+        result.extend(best_block)
+
+    result.append(0b00000001)  # 1-bit flag as a byte
+    return bytes(result)
 
 def compress_data(data):
     try:
@@ -94,20 +118,31 @@ def compress_with_iterations(data, attempts, iterations):
     best_compressed = paq.compress(data)
     best_size = len(best_compressed)
 
-    for i in tqdm(range(attempts), desc="Compression Attempts"): # progress bar
+    for i in tqdm(range(attempts), desc="Compression Attempts"):
         try:
             current_data = data
-            for j in tqdm(range(iterations), desc=f"Iteration {i+1}", leave=False): # nested progress bar
-                rle_encoded = rle_encode(current_data)
-                compressed_data = paq.compress(rle_encoded)
+            for j in tqdm(range(iterations), desc=f"Iteration {i+1}", leave=False):
+                rle_encoded = rle_encode(current_data) + b'\xAA'  # Add marker byte after RLE
+                transformed = apply_random_transformations(rle_encoded) + b'\xBB'  # Add marker after transform
+                improved = extra_move(transformed)  # Flag added in extra_move
+                compressed_data = paq.compress(improved)
+
                 if len(compressed_data) < best_size:
                     best_compressed = compressed_data
                     best_size = len(compressed_data)
-                current_data = rle_decode(paq.decompress(compressed_data))
+
+                # Prepare for next iteration
+                decompressed = paq.decompress(compressed_data)
+                if decompressed.endswith(b'\x01'):  # Remove flag
+                    decompressed = decompressed[:-1]
+                try:
+                    rle_decoded = rle_decode(decompressed.replace(b'\xAA', b'').replace(b'\xBB', b''))
+                    current_data = rle_decoded
+                except Exception as e:
+                    print(f"RLE decode error: {e}")
+                    break
         except Exception as e:
             print(f"Error during iteration {i+1}: {e}")
-            # Consider a more sophisticated error handling strategy here, possibly retrying or skipping.
-
 
     return best_compressed
 
@@ -126,7 +161,6 @@ def handle_file_io(func, file_name, data=None):
     except Exception as e:
         print(f"Error during file I/O: {e}")
         return None
-
 
 def get_positive_integer(prompt):
     while True:
