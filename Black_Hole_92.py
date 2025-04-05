@@ -22,6 +22,22 @@ def move_bits_right(data, n):
     n = n % 8
     return bytes([(byte >> n & 0xFF) | (byte << (8 - n)) & 0xFF for byte in data])
 
+# Run-Length Encoding (RLE)
+def rle_encode(data):
+    encoded_data = bytearray()
+    count = 1
+    for i in range(1, len(data)):
+        if data[i] == data[i - 1]:
+            count += 1
+        else:
+            encoded_data.append(data[i - 1])
+            encoded_data.append(count)
+            count = 1
+    # Add the last byte and its count
+    encoded_data.append(data[-1])
+    encoded_data.append(count)
+    return bytes(encoded_data)
+
 # Apply random transformations to the data
 def apply_random_transformations(data, num_transforms=10):
     transforms = [
@@ -29,10 +45,12 @@ def apply_random_transformations(data, num_transforms=10):
         (add_random_noise, True),
         (subtract_1_from_each_byte, False),
         (move_bits_left, True),
-        (move_bits_right, True)
+        (move_bits_right, True),
+        (rle_encode, False)  # Adding RLE as a transformation
     ]
     marker = 0  # 4-bit marker for tracking transformations
     transformed_data = data
+    rle_applied = False  # Track if RLE is applied
     
     for i in range(num_transforms):
         transform, needs_param = random.choice(transforms)
@@ -43,12 +61,14 @@ def apply_random_transformations(data, num_transforms=10):
                 marker |= (1 << (i % 4))  # Set 4-bit marker based on applied transformation
             except Exception as e:
                 print(f"Error applying transformation: {e}")
-                return transformed_data, marker
+                return transformed_data, marker, rle_applied
         else:
             transformed_data = transform(transformed_data)  # For transformations that don't need parameters
             marker |= (1 << (i % 4))  # Mark applied transformation
+            if transform == rle_encode:
+                rle_applied = True  # Mark RLE applied
 
-    return transformed_data, marker
+    return transformed_data, marker, rle_applied
 
 # Extra move function with 256-bit variations
 def extra_move(data):
@@ -101,7 +121,7 @@ def compress_with_iterations(data, attempts, iterations):
         try:
             current_data = data
             for j in tqdm(range(iterations), desc=f"Iteration {i+1}", leave=False):
-                transformed, marker = apply_random_transformations(current_data)
+                transformed, marker, rle_applied = apply_random_transformations(current_data)
                 improved = extra_move(transformed)
                 compressed_data = paq.compress(improved)
 
@@ -111,6 +131,11 @@ def compress_with_iterations(data, attempts, iterations):
 
                 # Prepare next round
                 current_data = paq.decompress(compressed_data)
+                
+                # If RLE was applied, add the flag at the end
+                if rle_applied:
+                    best_compressed += b'\x01'  # 1-bit flag for RLE applied
+                
         except Exception as e:
             print(f"Error during iteration {i+1}: {e}")
 
