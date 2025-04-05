@@ -5,6 +5,7 @@ import time
 from tqdm import tqdm  # For progress bar
 
 # Reversible Transformation Functions
+
 def reverse_chunk(data, chunk_size):
     return data[::-1]
 
@@ -23,6 +24,7 @@ def move_bits_right(data, n):
     return bytes([(byte >> n & 0xFF) | (byte << (8 - n)) & 0xFF for byte in data])
 
 # Run-Length Encoding (RLE)
+
 def rle_encode(data):
     encoded_data = bytearray()
     count = 1
@@ -39,6 +41,7 @@ def rle_encode(data):
     return bytes(encoded_data)
 
 # Apply random transformations to the data
+
 def apply_random_transformations(data, num_transforms=10):
     transforms = [
         (reverse_chunk, True),
@@ -70,27 +73,54 @@ def apply_random_transformations(data, num_transforms=10):
 
     return transformed_data, marker, rle_applied
 
-# Extra move function with 256x256 variations
+# Extra move function with 256-bit, 256x256, 256x256x256 variations
+
 def extra_move(data):
-    """Apply 256x256 variations every 256 bits, add a byte and move bits to find the best variant."""
+    """Apply multiple variations every 256 bits, handling 256x256, 256x256x256 permutations."""
     block_size = 256
     best_data = data
     best_size = len(paq.compress(data))
     result = bytearray()
 
+    # Apply variations for 256, 256x256, and 256x256x256 variations
     for i in range(0, len(data), block_size):
         block = data[i:i + block_size]
         best_block = block
         best_block_size = best_size
+        
+        # 256 variations
+        for b in range(256):  # 256 variations
+            modified = bytes([(byte + b) % 256 for byte in block])
+            modified = move_bits_left(modified, b % 8)
+            try_compressed = paq.compress(modified)
+            if len(try_compressed) < best_block_size:
+                best_block = modified
+                best_block_size = len(try_compressed)
 
-        for b1 in range(256):  # First 256 variations
-            for b2 in range(256):  # Second 256 variations
-                modified = bytes([(byte + b1) % 256 for byte in block])
-                modified = move_bits_left(modified, b2 % 8)  # Apply bit shift after byte variation
+        result.extend(best_block)
+
+        # Handling 256x256 permutations
+        for b1 in range(256):  # First level of variation
+            for b2 in range(256):  # Second level of variation
+                modified = bytes([(byte + b1 + b2) % 256 for byte in block])
+                modified = move_bits_left(modified, (b1 + b2) % 8)
                 try_compressed = paq.compress(modified)
                 if len(try_compressed) < best_block_size:
                     best_block = modified
                     best_block_size = len(try_compressed)
+
+        result.extend(best_block)
+
+        # Handling 256x256x256 permutations
+        for b1 in range(256):  # First level of variation
+            for b2 in range(256):  # Second level of variation
+                for b3 in range(256):  # Third level of variation
+                    modified = bytes([(byte + b1 + b2 + b3) % 256 for byte in block])
+                    modified = move_bits_left(modified, (b1 + b2 + b3) % 8)
+                    try_compressed = paq.compress(modified)
+                    if len(try_compressed) < best_block_size:
+                        best_block = modified
+                        best_block_size = len(try_compressed)
 
         result.extend(best_block)
 
@@ -99,6 +129,7 @@ def extra_move(data):
     return bytes(result)
 
 # Compression and Decompression using PAQ
+
 def compress_data(data):
     try:
         return paq.compress(data)
@@ -114,6 +145,7 @@ def decompress_data(data):
         return data
 
 # Compress with iterations and random transformations
+
 def compress_with_iterations(data, attempts, iterations):
     best_compressed = paq.compress(data)
     best_size = len(best_compressed)
@@ -132,7 +164,7 @@ def compress_with_iterations(data, attempts, iterations):
 
                 # Prepare next round
                 current_data = paq.decompress(compressed_data)
-                
+
                 # If RLE was applied, add the flag at the end
                 if rle_applied:
                     best_compressed += b'\x01'  # 1-bit flag for RLE applied
@@ -143,6 +175,7 @@ def compress_with_iterations(data, attempts, iterations):
     return best_compressed
 
 # File input/output handler
+
 def handle_file_io(func, file_name, data=None):
     try:
         if data is None:
@@ -160,6 +193,7 @@ def handle_file_io(func, file_name, data=None):
         return None
 
 # Get positive integer input
+
 def get_positive_integer(prompt):
     while True:
         try:
@@ -172,6 +206,7 @@ def get_positive_integer(prompt):
             print("Invalid input. Please enter an integer.")
 
 # Main Function to Run the Program
+
 def main():
     choice = input("Choose (1: Compress, 2: Extract): ")
     in_file, out_file = input("Input file: "), input("Output file: ")
