@@ -61,59 +61,64 @@ def apply_random_transformations(data, num_transforms=10):
                 transformed_data = transform(transformed_data, param)
             else:
                 transformed_data = transform(transformed_data)
-                if transform == rle_encode:
-                    rle_applied = True
-            marker |= (1 << (i % 4))
+            if transform == rle_encode:
+                rle_applied = True
+                marker |= (1 << (i % 4))
         except Exception as e:
             print(f"Error applying transformation: {e}")
-            return transformed_data, marker, rle_applied
     return transformed_data, marker, rle_applied
 
-# Structured extra move function with added positions and variations
+# Structured extra move function with variations and markers
 
 def extra_move(data):
     bit_block_size = 256  # 256 bits = 32 bytes
     byte_block_size = bit_block_size // 8
     result = bytearray()
-    positions = []
 
-    # Iterate through the data in blocks
+    # Process data in 256-bit (32-byte) blocks
     for i in range(0, len(data), byte_block_size):
         block = data[i:i + byte_block_size]
+
         if len(block) < byte_block_size:
             result.extend(block)
             continue
 
         best_block = block
-        best_size = len(paq.compress(block))
+        best_size = len(paq.compress(block))  # Placeholder for PAQ compression
         modified_flag = 0
+        
+        # Apply structured variations to each block
+        variation_levels = 1
+        variation_count = 256
+        
+        while 256 ** variation_levels <= byte_block_size:
+            variation_levels += 1
+            variation_count *= 256
 
-        # Structured positions for variation (1, 2, 3...)
-        for pos in range(1, 257):  # Adjust based on your desired sequence
-            mod = [(byte + (pos % 256)) % 256 for byte in block]
-            mod = move_bits_left(bytes(mod), pos % 8)
+        for b in range(variation_count):
+            # Create modified block based on variations
+            mod = [(byte + (b % 256)) % 256 for byte in block]
+            mod = move_bits_left(bytes(mod), b % 8)
 
-            # Save the position (1 byte for position)
-            positions.append(pos)
-
-            try_compressed = paq.compress(mod)
+            # Compress and compare with the best block size
+            try_compressed = paq.compress(mod)  # Placeholder compression
             if len(try_compressed) < best_size:
                 best_block = mod
                 best_size = len(try_compressed)
                 modified_flag = 1
 
+        # Add the best block and the modification flag to the result
         result.extend(best_block)
+        result.append(modified_flag)  # Add a byte flag for the modification (simplified)
 
-        # Add 1 byte variation flag after every block (for 1 bit metadata)
-        result.append(modified_flag)
+    # Add a final variation for the entire file as a marker
+    variation_marker = bytes([0xFF])  # Add the marker for all-zero to all-one transformation
+    result.extend(variation_marker)
 
-    # After all transformations, add the positions as 1 byte metadata (in the required format)
-    result.extend(positions)
+    # Final PAQ compression
+    compressed_result = paq.compress(bytes(result))  # Placeholder for actual PAQ compression
 
-    # Now compress with PAQ to get the final compressed result
-    final_compressed = paq.compress(bytes(result))
-
-    return final_compressed
+    return compressed_result
 
 # Compression/Decompression
 
@@ -156,7 +161,6 @@ def compress_with_iterations(data, attempts, iterations):
                 # Compare the sizes with and without RLE and select the best
                 if len(compressed_with_rle) < len(best_with_rle):
                     best_with_rle = compressed_with_rle
-
                 if len(compressed_without_rle) < len(best_without_rle):
                     best_without_rle = compressed_without_rle
 
@@ -167,7 +171,6 @@ def compress_with_iterations(data, attempts, iterations):
                 best_compressed = best_with_rle
             else:
                 best_compressed = best_without_rle
-
         except Exception as e:
             print(f"Error during iteration {i + 1}: {e}")
 
