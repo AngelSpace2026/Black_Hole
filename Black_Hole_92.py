@@ -4,7 +4,8 @@ import time
 from tqdm import tqdm
 import paq  # Placeholder for actual PAQ module
 
-# Reversible Transformation Functions
+# ------------------- Reversible Transformation Functions -------------------
+
 def reverse_chunk(data, chunk_size):
     return data[::-1]
 
@@ -22,7 +23,8 @@ def move_bits_right(data, n):
     n = n % 8
     return bytes([(byte >> n & 0xFF) | (byte << (8 - n)) & 0xFF for byte in data])
 
-# Run-Length Encoding (RLE)
+# ------------------- Run-Length Encoding (RLE) -------------------
+
 def rle_encode(data):
     if not data:
         return data
@@ -37,7 +39,8 @@ def rle_encode(data):
     encoded_data.extend([data[-1], count])
     return bytes(encoded_data)
 
-# Apply random transformations
+# ------------------- Random Transformations -------------------
+
 def apply_random_transformations(data, num_transforms=10):
     transforms = [
         (reverse_chunk, True),
@@ -65,9 +68,11 @@ def apply_random_transformations(data, num_transforms=10):
         except Exception as e:
             print(f"Error applying transformation: {e}")
             return transformed_data, marker, rle_applied
+
     return transformed_data, marker, rle_applied
 
-# Structured extra move function
+# ------------------- Structured Extra Move -------------------
+
 def extra_move(data):
     bit_block_size = 256  # 256 bits = 32 bytes
     byte_block_size = bit_block_size // 8
@@ -83,27 +88,34 @@ def extra_move(data):
         best_size = len(paq.compress(block))
         modified_flag = 0
 
-        variation_levels = 1
-        variation_count = 256
-        while 256 ** variation_levels <= byte_block_size:
-            variation_levels += 1
-            variation_count *= 256
+        block_len = len(block)
+        levels = block_len // byte_block_size
+        variation_count = 256 ** levels
+
+        # Safety cap to limit time complexity
+        if variation_count > 10_000_000:
+            variation_count = 1000
 
         for b in range(variation_count):
-            mod = [(byte + (b % 256)) % 256 for byte in block]
-            mod = move_bits_left(bytes(mod), b % 8)
-            try_compressed = paq.compress(mod)
-            if len(try_compressed) < best_size:
-                best_block = mod
-                best_size = len(try_compressed)
-                modified_flag = 1
+            try:
+                mod = [(byte + (b % 256)) % 256 for byte in block]
+                mod = move_bits_left(bytes(mod), b % 8)
+                try_compressed = paq.compress(mod)
+                if len(try_compressed) < best_size:
+                    best_block = mod
+                    best_size = len(try_compressed)
+                    modified_flag = 1
+            except Exception as e:
+                print(f"Variation {b} error: {e}")
+                continue
 
         result.extend(best_block)
-        result.append(modified_flag)  # 1 byte for 1-bit metadata (simplified)
+        result.append(modified_flag)  # Store 1-bit flag as byte
 
     return bytes(result)
 
-# Compression/Decompression
+# ------------------- PAQ Compression Wrapper -------------------
+
 def compress_data(data):
     try:
         return paq.compress(data)
@@ -118,7 +130,8 @@ def decompress_data(data):
         print(f"Error during PAQ decompression: {e}")
         return data
 
-# Compression with iterations
+# ------------------- Compression with Iterations -------------------
+
 def compress_with_iterations(data, attempts, iterations):
     best_compressed = paq.compress(data)
     best_size = len(best_compressed)
@@ -126,7 +139,7 @@ def compress_with_iterations(data, attempts, iterations):
     for i in tqdm(range(attempts), desc="Compression Attempts"):
         try:
             current_data = data
-            for j in tqdm(range(iterations), desc=f"Iteration {i+1}", leave=False):
+            for j in tqdm(range(iterations), desc=f"Iteration {i + 1}", leave=False):
                 transformed, marker, rle_applied = apply_random_transformations(current_data)
                 improved = extra_move(transformed)
                 compressed_data = paq.compress(improved)
@@ -141,11 +154,12 @@ def compress_with_iterations(data, attempts, iterations):
                 best_compressed += b'\x01'  # Simple 1-bit RLE flag
 
         except Exception as e:
-            print(f"Error during iteration {i+1}: {e}")
+            print(f"Error during iteration {i + 1}: {e}")
 
     return best_compressed
 
-# File I/O handler
+# ------------------- File I/O Handler -------------------
+
 def handle_file_io(func, file_name, data=None):
     try:
         if data is None:
@@ -162,7 +176,8 @@ def handle_file_io(func, file_name, data=None):
         print(f"Error during file I/O: {e}")
         return None
 
-# Get positive integer input
+# ------------------- Get Integer Input -------------------
+
 def get_positive_integer(prompt):
     while True:
         try:
@@ -174,7 +189,8 @@ def get_positive_integer(prompt):
         except ValueError:
             print("Invalid input. Please enter an integer.")
 
-# Main
+# ------------------- Main Function -------------------
+
 def main():
     choice = input("Choose (1: Compress, 2: Extract): ")
     in_file = input("Input file: ")
