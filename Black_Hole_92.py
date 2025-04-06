@@ -115,8 +115,8 @@ def main():
     out_file = input("Output file: ")
 
     if choice == '1':
-        attempts = get_positive_integer("Enter number of compression attempts: ")
-        iterations = get_positive_integer("Enter number of iterations per attempt: ")
+        attempts = 1
+        iterations = 1
         data = handle_file_io(lambda x: x, in_file)
         if data:
             start_time = time.time()
