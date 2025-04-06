@@ -1,3 +1,4 @@
+
 import os
 import random
 import time
@@ -54,11 +55,11 @@ def apply_random_transformations(data, num_transforms=10):
     transformed_data = data
     rle_applied = False
     for i in range(num_transforms):
-        transform, needs_param = random.choice(transforms)
+        transform, needs_paq = random.choice(transforms)
         try:
-            if needs_param:
-                param = random.randint(1, 8) if transform != reverse_chunk else random.randint(1, len(data))
-                transformed_data = transform(transformed_data, param)
+            if needs_paq:
+                paq = random.randint(1, 8) if transform != reverse_chunk else random.randint(1, len(data))
+                transformed_data = transform(transformed_data, paq)
             else:
                 transformed_data = transform(transformed_data)
                 if transform == rle_encode:
@@ -230,4 +231,4 @@ def main():
         print("Invalid choice")
 
 if __name__ == "__main__":
-    main()
+    main()
