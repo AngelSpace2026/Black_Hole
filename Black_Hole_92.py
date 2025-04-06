@@ -69,12 +69,15 @@ def apply_random_transformations(data, num_transforms=10):
             return transformed_data, marker, rle_applied
     return transformed_data, marker, rle_applied
 
-# Structured extra move function
+# Structured extra move function with added positions and variations
 
 def extra_move(data):
     bit_block_size = 256  # 256 bits = 32 bytes
     byte_block_size = bit_block_size // 8
     result = bytearray()
+    positions = []
+
+    # Iterate through the data in blocks
     for i in range(0, len(data), byte_block_size):
         block = data[i:i + byte_block_size]
         if len(block) < byte_block_size:
@@ -85,15 +88,14 @@ def extra_move(data):
         best_size = len(paq.compress(block))
         modified_flag = 0
 
-        variation_levels = 1
-        variation_count = 256
-        while 256 ** variation_levels <= byte_block_size:
-            variation_levels += 1
-            variation_count *= 256
+        # Structured positions for variation (1, 2, 3...)
+        for pos in range(1, 257):  # Adjust based on your desired sequence
+            mod = [(byte + (pos % 256)) % 256 for byte in block]
+            mod = move_bits_left(bytes(mod), pos % 8)
 
-        for b in range(variation_count):
-            mod = [(byte + (b % 256)) % 256 for byte in block]
-            mod = move_bits_left(bytes(mod), b % 8)
+            # Save the position (1 byte for position)
+            positions.append(pos)
+
             try_compressed = paq.compress(mod)
             if len(try_compressed) < best_size:
                 best_block = mod
@@ -101,8 +103,17 @@ def extra_move(data):
                 modified_flag = 1
 
         result.extend(best_block)
-        result.append(modified_flag)  # 1 byte for 1-bit metadata (simplified)
-    return bytes(result)
+
+        # Add 1 byte variation flag after every block (for 1 bit metadata)
+        result.append(modified_flag)
+
+    # After all transformations, add the positions as 1 byte metadata (in the required format)
+    result.extend(positions)
+
+    # Now compress with PAQ to get the final compressed result
+    final_compressed = paq.compress(bytes(result))
+
+    return final_compressed
 
 # Compression/Decompression
 
