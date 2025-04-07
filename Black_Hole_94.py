@@ -1,63 +1,146 @@
 import os
+import random
 import time
-import struct
-from tqdm import tqdm
-import paq  # REPLACE with your actual PAQ library
+import paq# Use zlib as a placeholder for PAQ compression
+from tqdm import tqdm  # For progress bar
+from concurrent.futures import ProcessPoolExecutor  # For parallelism
 
-def shift_bits_left(data, positions):
-    result = bytearray()
-    for byte in data:
-        shifted_byte = (byte << positions) % 256
-        result.append(shifted_byte)
-    return bytes(result)
+# RLE Encoding and Decoding
+def rle_encode(data):
+    if not data:
+        return b""
+    encoded = []
+    count = 1
+    prev_byte = data[0]
+    for i in range(1, len(data)):
+        if data[i] == prev_byte:
+            count += 1
+        else:
+            encoded.append((prev_byte, count))
+        prev_byte = data[i]
+        count = 1
+    encoded.append((prev_byte, count))
+    result = b""
+    for byte, count in encoded:
+        result += byte.to_bytes(1, 'big') + count.to_bytes(2, 'big')
+    return result
 
-def exhaustive_hill_climbing_best_shift(block, max_iterations):  
-    best_block = bytes(block)
-    best_size = len(paq.compress(best_block))
-    best_shift = 0
+def rle_decode(data):
+    decoded = []
+    i = 0
+    while i < len(data):
+        byte = data[i]
+        count = int.from_bytes(data[i + 1:i + 3], 'big')
+        decoded.extend([byte] * count)
+        i += 3
+    return bytes(decoded)
 
-    for iteration in range(max_iterations):
-        for shift in range(256):
-            shifted_block = shift_bits_left(best_block, shift)
-            compressed_size = len(paq.compress(bytes(shifted_block)))
-            if compressed_size < best_size:
-                best_size = compressed_size
-                best_block = shifted_block
-                best_shift = shift
+# Transformation Functions
+def reverse_chunk(data, chunk_size):
+    return data[::-1]
 
-    return best_block, best_shift
+def add_random_noise(data, noise_level=10):
+    return bytes([byte ^ random.randint(0, noise_level) for byte in data])
 
+def subtract_1_from_each_byte(data):
+    return bytes([(byte - 1) % 256 for byte in data])
 
+def move_bits_left(data, n):
+    n = n % 8
+    return bytes([(byte << n & 0xFF) | (byte >> (8 - n)) & 0xFF for byte in data])
+
+def move_bits_right(data, n):
+    n = n % 8
+    return bytes([(byte >> n & 0xFF) | (byte << (8 - n)) & 0xFF for byte in data])
+
+# Apply Random Transformations
+def apply_random_transformations(data, num_transforms=5):
+    transforms = [
+        (reverse_chunk, True),
+        (add_random_noise, True),
+        (subtract_1_from_each_byte, False),
+        (move_bits_left, True),
+        (move_bits_right, True)
+    ]
+    for _ in range(num_transforms):
+        transform, needs_param = random.choice(transforms)
+        if needs_param:
+            param = random.randint(1, 8) if transform != reverse_chunk else random.randint(1, len(data))
+            try:
+                data = transform(data, param)
+            except Exception as e:
+                print(f"Error applying transformation: {e}")
+                return data
+        else:
+            try:
+                data = transform(data)
+            except Exception as e:
+                print(f"Error applying transformation: {e}")
+                return data
+    return data
+
+# Compression and Decompression
 def compress_data(data):
-    original_size = len(data)
-    block_size_bytes = 32
-    num_blocks = (original_size + block_size_bytes - 1) // block_size_bytes
-    best_shifts = bytearray()
-
-    original_data_bytes = bytes(data)
-    compressed_original_data = paq.compress(original_data_bytes)
-
-    padded_data = bytearray(data)
-    for i in range(0, len(padded_data), block_size_bytes):
-        block = padded_data[i:i + block_size_bytes]
-        best_block, best_shift = exhaustive_hill_climbing_best_shift(block, max_iterations=1)
-        best_shifts.append(best_shift)
-        padded_data[i:i + block_size_bytes] = best_block
-
-    compressed_data = struct.pack(">I", original_size) + best_shifts + compressed_original_data
-
-    return compressed_data
-
+    try:
+        return paq.compress(data)  # Placeholder for PAQ compression
+    except Exception as e:
+        print(f"Error during compression: {e}")
+        return data
 
 def decompress_data(data):
-    original_size = struct.unpack(">I", data[:4])[0]
-    num_blocks = (original_size + 31) // 32
-    best_shifts = data[4:4 + num_blocks]
-    compressed_data = data[4 + num_blocks:]
-    decompressed_data = paq.decompress(compressed_data)
-    return decompressed_data
+    try:
+        return paq.decompress(data)  # Placeholder for PAQ decompression
+    except Exception as e:
+        print(f"Error during decompression: {e}")
+        return data
 
+# Transformation Exploration for Best Score
+def extra_move(data, chunk_size=512):
+    best_data = bytearray()
+    for i in range(0, len(data), chunk_size):
+        chunk = data[i:i + chunk_size]
+        best_chunk = chunk
+        best_score = len(compress_data(chunk))
+        for _ in range(16):  # 16 variations per chunk
+            transformed = bytearray(chunk)
+            for j in range(len(transformed)):
+                transformed[j] = (transformed[j] + random.randint(0, 255)) % 256
+                if random.choice([True, False]):
+                    shift = random.randint(1, 7)
+                    transformed[j] = ((transformed[j] << shift) | (transformed[j] >> (8 - shift))) & 0xFF
+                else:
+                    shift = random.randint(1, 7)
+                    transformed[j] = ((transformed[j] >> shift) | (transformed[j] << (8 - shift))) & 0xFF
+            comp_size = len(compress_data(bytes(transformed)))
+            if comp_size < best_score:
+                best_score = comp_size
+                best_chunk = transformed
+        best_data += best_chunk
+    return bytes(best_data)
 
+# Compression with Multiple Iterations and Transformations
+def compress_with_iterations(data, attempts, iterations):
+    best_compressed = compress_data(bytes(data))
+    best_size = len(best_compressed)
+
+    for i in tqdm(range(attempts), desc="Compression Attempts"):
+        try:
+            current_data = data
+            for j in tqdm(range(iterations), desc=f"Iteration {i + 1}", leave=False):
+                current_data = apply_random_transformations(current_data)
+                current_data = extra_move(current_data)
+                rle_encoded = rle_encode(current_data)
+                compressed_data = compress_data(bytes(rle_encoded))
+                if len(compressed_data) < best_size:
+                    best_compressed = compressed_data
+                    best_size = len(compressed_data)
+                current_data = rle_decode(decompress_data(compressed_data))
+        except Exception as e:
+            print(f"Error during iteration {i + 1}: {e}")
+
+    return best_compressed
+
+# File I/O
 def handle_file_io(func, file_name, data=None):
     try:
         if data is None:
@@ -73,7 +156,8 @@ def handle_file_io(func, file_name, data=None):
     except Exception as e:
         print(f"Error during file I/O: {e}")
         return None
-        
+
+# User Input for Positive Integer
 def get_positive_integer(prompt):
     while True:
         try:
@@ -85,16 +169,19 @@ def get_positive_integer(prompt):
         except ValueError:
             print("Invalid input. Please enter an integer.")
 
+# Main Function
 def main():
     choice = input("Choose (1: Compress, 2: Extract): ")
     in_file = input("Input file: ")
     out_file = input("Output file: ")
 
     if choice == '1':
+        attempts = get_positive_integer("Enter number of compression attempts: ")
+        iterations = get_positive_integer("Enter number of iterations per attempt: ")
         data = handle_file_io(lambda x: x, in_file)
         if data:
             start_time = time.time()
-            compressed_data = compress_data(data)
+            compressed_data = compress_with_iterations(data, attempts, iterations)
             end_time = time.time()
             handle_file_io(lambda x: x, out_file, compressed_data)
             print(f"Compressed to {out_file} in {end_time - start_time:.2f} seconds")
