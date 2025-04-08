@@ -8,7 +8,7 @@ from tqdm import tqdm
 class zlib_wrapper:
     @staticmethod
     def compress(data):
-        #print(data)
+        # print(data)
         return paq.compress(data)
 
     @staticmethod
@@ -39,36 +39,31 @@ def random_minus_blocks(data, block_size_bits=64):
     block_size = block_size_bits // 8
     if block_size == 0:
         raise ValueError("Block size cannot be 0 bytes")
-
     transformed_data = bytearray()
     metadata = bytearray()
-
     for i in range(0, len(data), block_size):
         block = data[i:i + block_size]
         if len(block) < block_size:
-            block += bytes(block_size - len(block))
+            block += bytes(block_size - len(block))  # Pad block if smaller
         random_value = random.randint(1, 2 ** block_size_bits - 1)
         rand_bytes = random_value.to_bytes(block_size, byteorder='big')
         transformed_block = bytes([(b - rand_bytes[j % block_size]) % 256 for j, b in enumerate(block)])
         transformed_data.extend(transformed_block)
         metadata.extend(rand_bytes)
-
     return bytes(transformed_data), bytes(metadata)
 
 # Add 2-byte block size for each block of size 64 bytes
 def add_block_size_64(data):
     transformed_data = bytearray()
-
     block_size = 64  # Fixed block size of 64 bytes
     i = 0
     while i < len(data):
         block = data[i:i + block_size]
         if len(block) < block_size:
-            block += bytes(block_size - len(block))  # Pad block if it's smaller than 64 bytes
+            block += bytes(block_size - len(block))  # Pad block if smaller
         transformed_data.extend((block_size).to_bytes(2, 'big'))  # Add 2 bytes for block size (64)
         transformed_data.extend(block)  # Add the block data
         i += block_size  # Move to the next block
-
     return bytes(transformed_data)
 
 # RLE Encoding with 2-byte count
@@ -100,7 +95,6 @@ def apply_random_transformations(data, num_transforms=10):
     ]
     marker = 0
     transformed_data = data
-
     for i in range(num_transforms):
         transform, needs_param = random.choice(transforms)
         try:
@@ -116,7 +110,6 @@ def apply_random_transformations(data, num_transforms=10):
             marker |= (1 << (i % 8))
         except Exception as e:
             print(f"Error applying transformation {transform.__name__}: {e}")
-
     transformed_data = add_block_size_64(transformed_data)  # Apply block size transformation for 64 bytes
     transformed_data = rle_encode_2byte(transformed_data)
     return transformed_data, marker
@@ -127,41 +120,34 @@ def compress_data(data):
         return zlib_wrapper.compress(data)
     except Exception as e:
         print(f"Error during zlib compression: {e}")
-        return data
+    return data
 
 def decompress_data(data):
     try:
         return zlib_wrapper.decompress(data)
     except Exception as e:
         print(f"Error during zlib decompression: {e}")
-        return data
+    return data
 
 # Iterative compression logic
 def compress_with_iterations(data, attempts, iterations):
     best_compressed = zlib_wrapper.compress(data)
     best_size = len(best_compressed)
-
     for i in tqdm(range(attempts), desc="Compression Attempts"):
         try:
             current_data = data
             best_this_attempt = best_compressed
-
             for j in tqdm(range(iterations), desc=f"Iteration {i + 1}", leave=False):
                 transformed, marker = apply_random_transformations(current_data)
                 compressed = zlib_wrapper.compress(transformed)
-
                 if len(compressed) < len(best_this_attempt):
                     best_this_attempt = compressed
-
                 current_data = zlib_wrapper.decompress(best_this_attempt)
-
             if len(best_this_attempt) < best_size:
                 best_compressed = best_this_attempt
                 best_size = len(best_this_attempt)
-
         except Exception as e:
             print(f"Error during iteration {i + 1}: {e}")
-
     return best_compressed
 
 # File I/O
@@ -196,8 +182,14 @@ def get_positive_integer(prompt):
 def main():
     choice = input("Choose (1: Compress, 2: Extract): ")
     in_file = input("Input file: ")
+    
+    # Check if file size is smaller than 1024 bytes
+    if os.path.getsize(in_file) < 1024:
+        print("Error: File size is too small. The file must be at least 1024 bytes.")
+        return
+    
     out_file = input("Output file: ")
-
+    
     if choice == '1':
         attempts = get_positive_integer("Enter number of compression attempts: ")
         iterations = get_positive_integer("Enter number of iterations per attempt: ")
