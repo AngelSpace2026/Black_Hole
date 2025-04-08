@@ -88,14 +88,14 @@ def apply_random_transformations(data, num_transforms=10):
     transformed_data = data
 
     for i in range(num_transforms):
-        transform, needs_param = random.choice(transforms)
+        transform, needs_paq = random.choice(transforms)
         try:
             if transform == random_minus_blocks:
                 bits = random.choice([32, 64, 128, 256])
                 transformed_data, _ = transform(transformed_data, block_size_bits=bits)
-            elif needs_param:
-                param = random.randint(1, 7)
-                transformed_data = transform(transformed_data, param)
+            elif needs_paq:
+                paq = random.randint(1, 7)
+                transformed_data = transform(transformed_data, paq)
             else:
                 transformed_data = transform(transformed_data)
             marker |= (1 << (i % 8))
