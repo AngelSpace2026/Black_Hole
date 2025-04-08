@@ -1,8 +1,20 @@
 import os
 import random
 import time
+import paq
 from tqdm import tqdm
-import paq  # Placeholder for actual PAQ module
+
+# Compression using zlib (replacing PAQ)
+class zlib_wrapper:
+    @staticmethod
+    def compress(data):
+        #print(data)
+        return paq.compress(data)
+        
+
+    @staticmethod
+    def decompress(data):
+        return paq.decompress(data)
 
 # Reversible Transformation Functions
 
@@ -23,30 +35,27 @@ def move_bits_right(data, n):
     n = n % 8
     return bytes([(byte >> n & 0xFF) | (byte << (8 - n)) & 0xFF for byte in data])
 
-def shift_block_left(data, shift_value):
-    shift_value = shift_value % len(data)
-    return data[shift_value:] + data[:shift_value]
+# Minus transformation with 32, 64, 128, 256-bit blocks
 
-def shift_block_right(data, shift_value):
-    shift_value = shift_value % len(data)
-    return data[-shift_value:] + data[:-shift_value]
-
-def random_minus_64bit(data):
-    block_size = 8  # 64-bit = 8 bytes
+def random_minus_blocks(data, block_size_bits=64):
+    assert block_size_bits in [32, 64, 128, 256], "Invalid block size."
+    block_size = block_size_bits // 8
     transformed_data = bytearray()
     metadata = bytearray()
 
-    random_value = random.randint(1, 2**64 - 1)
-
     for i in range(0, len(data), block_size):
         block = data[i:i + block_size]
-        transformed_block = bytes([(byte - (random_value % 256)) % 256 for byte in block])
+        if len(block) < block_size:
+            block += bytes(block_size - len(block))
+        random_value = random.randint(1, 2 ** block_size_bits - 1)
+        rand_bytes = random_value.to_bytes(block_size, byteorder='big')
+        transformed_block = bytes([(b - rand_bytes[j % block_size]) % 256 for j, b in enumerate(block)])
         transformed_data.extend(transformed_block)
-        metadata.extend(random_value.to_bytes(8, 'big'))
+        metadata.extend(rand_bytes)
 
-    return transformed_data, metadata
+    return bytes(transformed_data), bytes(metadata)
 
-# RLE with 2-byte count (up to 65536)
+# RLE Encoding with 2-byte count
 
 def rle_encode_2byte(data):
     if not data:
@@ -73,50 +82,49 @@ def apply_random_transformations(data, num_transforms=10):
         (subtract_1_from_each_byte, False),
         (move_bits_left, True),
         (move_bits_right, True),
-        (random_minus_64bit, False)
+        (random_minus_blocks, False)
     ]
     marker = 0
     transformed_data = data
 
     for i in range(num_transforms):
-        transform, needs_paq = random.choice(transforms)
+        transform, needs_param = random.choice(transforms)
         try:
-            if needs_paq:
-                paq = random.randint(1, 8) if transform != reverse_chunk else random.randint(1, len(data))
-                transformed_data = transform(transformed_data, paq)
+            if transform == random_minus_blocks:
+                bits = random.choice([32, 64, 128, 256])
+                transformed_data, _ = transform(transformed_data, block_size_bits=bits)
+            elif needs_param:
+                param = random.randint(1, 7)
+                transformed_data = transform(transformed_data, param)
             else:
-                if transform == random_minus_64bit:
-                    transformed_data, _ = transform(transformed_data)
-                else:
-                    transformed_data = transform(transformed_data)
+                transformed_data = transform(transformed_data)
             marker |= (1 << (i % 8))
         except Exception as e:
-            print(f"Error applying transformation: {e}")
+            print(f"Error applying transformation {transform.__name__}: {e}")
 
-    # Always apply RLE
     transformed_data = rle_encode_2byte(transformed_data)
     return transformed_data, marker
 
-# Compression/Decompression
+# Compression
 
 def compress_data(data):
     try:
-        return paq.compress(data)
+        return zlib_wrapper.compress(data)
     except Exception as e:
-        print(f"Error during PAQ compression: {e}")
+        print(f"Error during zlib compression: {e}")
     return data
 
 def decompress_data(data):
     try:
-        return paq.decompress(data)
+        return zlib_wrapper.decompress(data)
     except Exception as e:
-        print(f"Error during PAQ decompression: {e}")
+        print(f"Error during zlib decompression: {e}")
     return data
 
 # Compression with Iterations
 
 def compress_with_iterations(data, attempts, iterations):
-    best_compressed = paq.compress(data)
+    best_compressed = zlib_wrapper.compress(data)
     best_size = len(best_compressed)
 
     for i in tqdm(range(attempts), desc="Compression Attempts"):
@@ -126,12 +134,12 @@ def compress_with_iterations(data, attempts, iterations):
 
             for j in tqdm(range(iterations), desc=f"Iteration {i + 1}", leave=False):
                 transformed, marker = apply_random_transformations(current_data)
-                compressed = paq.compress(transformed)
+                compressed = zlib_wrapper.compress(transformed)
 
                 if len(compressed) < len(best_this_attempt):
                     best_this_attempt = compressed
 
-                current_data = paq.decompress(best_this_attempt)
+                current_data = zlib_wrapper.decompress(best_this_attempt)
 
             if len(best_this_attempt) < best_size:
                 best_compressed = best_this_attempt
@@ -159,7 +167,7 @@ def handle_file_io(func, file_name, data=None):
         print(f"Error during file I/O: {e}")
     return None
 
-# Get positive integer input
+# User Input
 
 def get_positive_integer(prompt):
     while True:
