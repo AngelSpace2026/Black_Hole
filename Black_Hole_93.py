@@ -6,26 +6,48 @@ import paq  # Placeholder for actual PAQ module
 
 # Reversible Transformation Functions
 
-# Random Minus Function for 64-bit blocks (same subtraction for each block)
-def random_minus_64bit(data):
-    """Subtract the same random value from each 64-bit block and return metadata for the subtraction."""
-    block_size = 8  # 64-bit = 8 bytes
+# Random Subtraction Function for 256-bit blocks (subtract random value between 1 and 2**256 - 1)
+def random_subtract_256bit(data):
+    """Subtract a random value from each 256-bit block and add metadata for the subtraction."""
+    block_size = 32  # 256 bits = 32 bytes
     transformed_data = bytearray()
     metadata = bytearray()
 
-    # Generate a single random subtraction value for all blocks
-    random_value = random.randint(1, 2**64 - 1)
-
-    # Apply the random subtraction to all blocks and add metadata
+    # Generate a random subtraction value for each 256-bit block
     for i in range(0, len(data), block_size):
         block = data[i:i + block_size]
+        random_value = random.randint(1, 2**256 - 1)
+
+        # Subtract the random value from each byte of the 256-bit block
         transformed_block = bytes([(byte - (random_value % 256)) % 256 for byte in block])
         transformed_data.extend(transformed_block)
 
-        # Add metadata: 8 bytes indicating the amount subtracted
-        metadata.extend(random_value.to_bytes(8, 'big'))
+        # Add metadata: 32 bytes indicating the random value used
+        metadata.extend(random_value.to_bytes(32, 'big'))
 
     return transformed_data, metadata
+
+# Reversing function for chunk transformations
+def reverse_chunk(data, chunk_size):
+    return data[::-1]
+
+# Adding random noise
+def add_random_noise(data, noise_level=10):
+    return bytes([byte ^ random.randint(0, noise_level) for byte in data])
+
+# Subtract 1 from each byte
+def subtract_1_from_each_byte(data):
+    return bytes([(byte - 1) % 256 for byte in data])
+
+# Move bits left (1-8 bits)
+def move_bits_left(data, n):
+    n = n % 8
+    return bytes([(byte << n & 0xFF) | (byte >> (8 - n)) & 0xFF for byte in data])
+
+# Move bits right (1-8 bits)
+def move_bits_right(data, n):
+    n = n % 8
+    return bytes([(byte >> n & 0xFF) | (byte << (8 - n)) & 0xFF for byte in data])
 
 # Run-Length Encoding (RLE)
 def rle_encode(data):
@@ -69,7 +91,18 @@ def compress_with_iterations(data, attempts, iterations):
             best_without_rle = best_compressed
 
             for j in tqdm(range(iterations), desc=f"Iteration {i + 1}", leave=False):
-                # Just compress the data without transformations or RLE
+                # Apply transformations and compression
+                current_data, _ = random_subtract_256bit(current_data)  # Apply random subtraction transformation
+                current_data = reverse_chunk(current_data, 64)  # Apply chunk reversal
+                current_data = add_random_noise(current_data)  # Add random noise
+                current_data = subtract_1_from_each_byte(current_data)  # Subtract 1 from each byte
+                current_data = move_bits_left(current_data, random.randint(1, 8))  # Move bits left
+                current_data = move_bits_right(current_data, random.randint(1, 8))  # Move bits right
+
+                # Apply RLE compression to the transformed data
+                current_data = rle_encode(current_data)
+
+                # Compress the transformed data with RLE applied
                 compressed_with_rle = paq.compress(current_data)
                 compressed_without_rle = paq.compress(current_data)
 
