@@ -6,35 +6,7 @@ import paq  # Placeholder for actual PAQ module
 
 # Reversible Transformation Functions
 
-def reverse_chunk(data, chunk_size):
-    return data[::-1]
-
-def add_random_noise(data, noise_level=10):
-    return bytes([byte ^ random.randint(0, noise_level) for byte in data])
-
-def subtract_1_from_each_byte(data):
-    return bytes([(byte - 1) % 256 for byte in data])
-
-def move_bits_left(data, n):
-    n = n % 8
-    return bytes([(byte << n & 0xFF) | (byte >> (8 - n)) & 0xFF for byte in data])
-
-def move_bits_right(data, n):
-    n = n % 8
-    return bytes([(byte >> n & 0xFF) | (byte << (8 - n)) & 0xFF for byte in data])
-
-def shift_block_left(data, shift_value):
-    """Shift the block by the given value, applying modulo for large shifts."""
-    shift_value = shift_value % len(data)
-    return data[shift_value:] + data[:shift_value]
-
-def shift_block_right(data, shift_value):
-    """Shift the block right by the given value."""
-    shift_value = shift_value % len(data)
-    return data[-shift_value:] + data[:-shift_value]
-
 # Random Minus Function for 64-bit blocks (same subtraction for each block)
-
 def random_minus_64bit(data):
     """Subtract the same random value from each 64-bit block and return metadata for the subtraction."""
     block_size = 8  # 64-bit = 8 bytes
@@ -56,7 +28,6 @@ def random_minus_64bit(data):
     return transformed_data, metadata
 
 # Run-Length Encoding (RLE)
-
 def rle_encode(data):
     if not data:
         return data
@@ -71,42 +42,7 @@ def rle_encode(data):
     encoded_data.extend([data[-1], count])
     return bytes(encoded_data)
 
-# Apply random transformations
-
-def apply_random_transformations(data, num_transforms=10):
-    transforms = [
-        (reverse_chunk, True),
-        (add_random_noise, True),
-        (subtract_1_from_each_byte, False),
-        (move_bits_left, True),
-        (move_bits_right, True),
-        (rle_encode, False),
-        (random_minus_64bit, False)  # Added random_minus transformation for 64-bit blocks
-    ]
-    marker = 0
-    transformed_data = data
-    rle_applied = False
-    for i in range(num_transforms):
-        transform, needs_paq = random.choice(transforms)
-        try:
-            if needs_paq:
-                paq = random.randint(1, 8) if transform != reverse_chunk else random.randint(1, len(data))
-                transformed_data = transform(transformed_data, paq)
-            else:
-                if transform == random_minus_64bit:
-                    transformed_data, metadata = transform(transformed_data)
-                else:
-                    transformed_data = transform(transformed_data)
-                if transform == rle_encode:
-                    rle_applied = True
-            marker |= (1 << (i % 4))
-        except Exception as e:
-            print(f"Error applying transformation: {e}")
-            return transformed_data, marker, rle_applied
-    return transformed_data, marker, rle_applied
-
 # Compression/Decompression
-
 def compress_data(data):
     try:
         return paq.compress(data)
@@ -122,7 +58,6 @@ def decompress_data(data):
     return data
 
 # ------------------- Compression with Iterations -------------------
-
 def compress_with_iterations(data, attempts, iterations):
     best_compressed = paq.compress(data)
     best_size = len(best_compressed)
@@ -134,11 +69,9 @@ def compress_with_iterations(data, attempts, iterations):
             best_without_rle = best_compressed
 
             for j in tqdm(range(iterations), desc=f"Iteration {i + 1}", leave=False):
-                transformed, marker, rle_applied = apply_random_transformations(current_data)
-
-                # Apply RLE or not, and compare the result
-                compressed_with_rle = paq.compress(transformed)
-                compressed_without_rle = paq.compress(transformed)
+                # Just compress the data without transformations or RLE
+                compressed_with_rle = paq.compress(current_data)
+                compressed_without_rle = paq.compress(current_data)
 
                 # Compare the sizes with and without RLE and select the best
                 if len(compressed_with_rle) < len(best_with_rle):
@@ -161,7 +94,6 @@ def compress_with_iterations(data, attempts, iterations):
     return best_compressed
 
 # File I/O handler
-
 def handle_file_io(func, file_name, data=None):
     try:
         if data is None:
@@ -179,7 +111,6 @@ def handle_file_io(func, file_name, data=None):
         return None
 
 # Get positive integer input
-
 def get_positive_integer(prompt):
     while True:
         try:
@@ -192,7 +123,6 @@ def get_positive_integer(prompt):
             print("Invalid input. Please enter an integer.")
 
 # Main
-
 def main():
     choice = input("Choose (1: Compress, 2: Extract): ")
     in_file = input("Input file: ")
