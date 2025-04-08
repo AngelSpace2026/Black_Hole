@@ -1,23 +1,21 @@
 import os
 import random
 import time
-import paq
+import paq  # Assumed to be a working PAQ wrapper module
 from tqdm import tqdm
 
-# Compression using zlib (replacing PAQ)
+# Compression using zlib (placeholder for PAQ)
 class zlib_wrapper:
     @staticmethod
     def compress(data):
         #print(data)
         return paq.compress(data)
-        
 
     @staticmethod
     def decompress(data):
         return paq.decompress(data)
 
 # Reversible Transformation Functions
-
 def reverse_chunk(data, chunk_size):
     return data[::-1]
 
@@ -35,11 +33,13 @@ def move_bits_right(data, n):
     n = n % 8
     return bytes([(byte >> n & 0xFF) | (byte << (8 - n)) & 0xFF for byte in data])
 
-# Minus transformation with 32, 64, 128, 256-bit blocks
-
+# Minus transformation with 32 to 1024-bit blocks
 def random_minus_blocks(data, block_size_bits=64):
-    assert block_size_bits in [32, 64, 128, 256], "Invalid block size."
+    assert block_size_bits in [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024], "Invalid block size."
     block_size = block_size_bits // 8
+    if block_size == 0:
+        raise ValueError("Block size cannot be 0 bytes")
+
     transformed_data = bytearray()
     metadata = bytearray()
 
@@ -55,8 +55,23 @@ def random_minus_blocks(data, block_size_bits=64):
 
     return bytes(transformed_data), bytes(metadata)
 
-# RLE Encoding with 2-byte count
+# Add 2-byte block size for each block of size 64 bytes
+def add_block_size_64(data):
+    transformed_data = bytearray()
 
+    block_size = 64  # Fixed block size of 64 bytes
+    i = 0
+    while i < len(data):
+        block = data[i:i + block_size]
+        if len(block) < block_size:
+            block += bytes(block_size - len(block))  # Pad block if it's smaller than 64 bytes
+        transformed_data.extend((block_size).to_bytes(2, 'big'))  # Add 2 bytes for block size (64)
+        transformed_data.extend(block)  # Add the block data
+        i += block_size  # Move to the next block
+
+    return bytes(transformed_data)
+
+# RLE Encoding with 2-byte count
 def rle_encode_2byte(data):
     if not data:
         return data
@@ -74,7 +89,6 @@ def rle_encode_2byte(data):
     return bytes(encoded_data)
 
 # Apply random transformations + always RLE
-
 def apply_random_transformations(data, num_transforms=10):
     transforms = [
         (reverse_chunk, True),
@@ -88,41 +102,41 @@ def apply_random_transformations(data, num_transforms=10):
     transformed_data = data
 
     for i in range(num_transforms):
-        transform, needs_paq = random.choice(transforms)
+        transform, needs_param = random.choice(transforms)
         try:
             if transform == random_minus_blocks:
-                bits = random.choice([32, 64, 128, 256])
+                valid_bits = [b for b in [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024] if b // 8 > 0]
+                bits = random.choice(valid_bits)
                 transformed_data, _ = transform(transformed_data, block_size_bits=bits)
-            elif needs_paq:
-                paq = random.randint(1, 7)
-                transformed_data = transform(transformed_data, paq)
+            elif needs_param:
+                param = random.randint(1, 7)
+                transformed_data = transform(transformed_data, param)
             else:
                 transformed_data = transform(transformed_data)
             marker |= (1 << (i % 8))
         except Exception as e:
             print(f"Error applying transformation {transform.__name__}: {e}")
 
+    transformed_data = add_block_size_64(transformed_data)  # Apply block size transformation for 64 bytes
     transformed_data = rle_encode_2byte(transformed_data)
     return transformed_data, marker
 
-# Compression
-
+# Compression functions
 def compress_data(data):
     try:
         return zlib_wrapper.compress(data)
     except Exception as e:
         print(f"Error during zlib compression: {e}")
-    return data
+        return data
 
 def decompress_data(data):
     try:
         return zlib_wrapper.decompress(data)
     except Exception as e:
         print(f"Error during zlib decompression: {e}")
-    return data
+        return data
 
-# Compression with Iterations
-
+# Iterative compression logic
 def compress_with_iterations(data, attempts, iterations):
     best_compressed = zlib_wrapper.compress(data)
     best_size = len(best_compressed)
@@ -151,7 +165,6 @@ def compress_with_iterations(data, attempts, iterations):
     return best_compressed
 
 # File I/O
-
 def handle_file_io(func, file_name, data=None):
     try:
         if data is None:
@@ -167,8 +180,7 @@ def handle_file_io(func, file_name, data=None):
         print(f"Error during file I/O: {e}")
     return None
 
-# User Input
-
+# User input
 def get_positive_integer(prompt):
     while True:
         try:
@@ -180,8 +192,7 @@ def get_positive_integer(prompt):
         except ValueError:
             print("Invalid input. Please enter an integer.")
 
-# Main
-
+# Main driver
 def main():
     choice = input("Choose (1: Compress, 2: Extract): ")
     in_file = input("Input file: ")
