@@ -79,11 +79,11 @@ def apply_random_transformations(data, num_transforms=10):
     transformed_data = data
 
     for i in range(num_transforms):
-        transform, needs_param = random.choice(transforms)
+        transform, needs_paq = random.choice(transforms)
         try:
-            if needs_param:
-                param = random.randint(1, 8) if transform != reverse_chunk else random.randint(1, len(data))
-                transformed_data = transform(transformed_data, param)
+            if needs_paq:
+                paq = random.randint(1, 8) if transform != reverse_chunk else random.randint(1, len(data))
+                transformed_data = transform(transformed_data, paq)
             else:
                 if transform == random_minus_64bit:
                     transformed_data, _ = transform(transformed_data)
