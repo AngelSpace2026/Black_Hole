@@ -4,48 +4,53 @@ import time
 from tqdm import tqdm
 import paq  # Placeholder for actual PAQ module
 
-# Helper function to perform a left rotation (reverse left)
-def rotate_left(data, positions):
-    """Rotate bits of data left by a specified number of positions."""
-    return (data << positions) | (data >> (256 - positions))
+# Reversible Transformation Functions
 
-# Helper function to perform a right rotation (reverse right)
-def rotate_right(data, positions):
-    """Rotate bits of data right by a specified number of positions."""
-    return (data >> positions) | (data << (256 - positions))
-
-# 256-bit Block Reversal Transformations
-def reverse_transform_256bit(data):
-    """Apply reverse left and right rotations with 256 possible positions on 256-bit blocks."""
-    block_size = 32  # 256 bits = 32 bytes
+# Random Minus Function for 64-bit blocks (same subtraction for each block)
+def random_minus_64bit(data):
+    """Subtract the same random value from each 64-bit block and return metadata for the subtraction."""
+    block_size = 8  # 64-bit = 8 bytes
     transformed_data = bytearray()
     metadata = bytearray()
 
+    # Generate a single random subtraction value for all blocks
+    random_value = random.randint(1, 2**64 - 1)
+
+    # Apply the random subtraction to all blocks and add metadata
     for i in range(0, len(data), block_size):
         block = data[i:i + block_size]
-        block_int = int.from_bytes(block, 'big')  # Convert to integer for bit manipulation
-        
-        # Store the transformation metadata (reverse left and right rotations)
-        reverse_left_pos = random.randint(0, 255)  # Random position for left rotation
-        reverse_right_pos = random.randint(0, 255)  # Random position for right rotation
-        
-        # Perform the transformations
-        transformed_left = rotate_left(block_int, reverse_left_pos)
-        transformed_right = rotate_right(block_int, reverse_right_pos)
-        
-        # Convert back to bytes
-        left_bytes = transformed_left.to_bytes(block_size, 'big')
-        right_bytes = transformed_right.to_bytes(block_size, 'big')
+        transformed_block = bytes([(byte - (random_value % 256)) % 256 for byte in block])
+        transformed_data.extend(transformed_block)
 
-        # Add the transformed data to the result
-        transformed_data.extend(left_bytes)
-        transformed_data.extend(right_bytes)
-
-        # Add metadata for the transformations
-        metadata.extend(reverse_left_pos.to_bytes(1, 'big'))  # 1 byte for reverse left position
-        metadata.extend(reverse_right_pos.to_bytes(1, 'big'))  # 1 byte for reverse right position
+        # Add metadata: 8 bytes indicating the amount subtracted
+        metadata.extend(random_value.to_bytes(8, 'big'))
 
     return transformed_data, metadata
+
+# Rotate bits left by specified number of positions (reverse left)
+def rotate_left(data, positions):
+    """Rotate bits of data left by a specified number of positions, masking to ensure 256-bit range."""
+    return ((data << positions) & ((1 << 256) - 1)) | (data >> (256 - positions))
+
+# Rotate bits right by specified number of positions (reverse right)
+def rotate_right(data, positions):
+    """Rotate bits of data right by a specified number of positions, masking to ensure 256-bit range."""
+    return (data >> positions) | ((data << (256 - positions)) & ((1 << 256) - 1))
+
+# Run-Length Encoding (RLE)
+def rle_encode(data):
+    if not data:
+        return data
+    encoded_data = bytearray()
+    count = 1
+    for i in range(1, len(data)):
+        if data[i] == data[i - 1] and count < 15:  # Using 4-bit for RLE count
+            count += 1
+        else:
+            encoded_data.extend([data[i - 1], count])
+            count = 1
+    encoded_data.extend([data[-1], count])
+    return bytes(encoded_data)
 
 # Compression/Decompression
 def compress_data(data):
@@ -70,31 +75,28 @@ def compress_with_iterations(data, attempts, iterations):
     for i in tqdm(range(attempts), desc="Compression Attempts"):
         try:
             current_data = data
-            best_with_transforms = best_compressed
-            best_without_transforms = best_compressed
+            best_with_rle = best_compressed
+            best_without_rle = best_compressed
 
             for j in tqdm(range(iterations), desc=f"Iteration {i + 1}", leave=False):
-                # Apply reverse transformations (left and right rotations)
-                current_data, _ = reverse_transform_256bit(current_data)  # Apply reverse transformations
+                # Just compress the data without transformations or RLE
+                compressed_with_rle = paq.compress(current_data)
+                compressed_without_rle = paq.compress(current_data)
 
-                # Compress the transformed data
-                compressed_with_transforms = paq.compress(current_data)
-                compressed_without_transforms = paq.compress(current_data)
+                # Compare the sizes with and without RLE and select the best
+                if len(compressed_with_rle) < len(best_with_rle):
+                    best_with_rle = compressed_with_rle
 
-                # Compare the sizes and select the best result
-                if len(compressed_with_transforms) < len(best_with_transforms):
-                    best_with_transforms = compressed_with_transforms
+                if len(compressed_without_rle) < len(best_without_rle):
+                    best_without_rle = compressed_without_rle
 
-                if len(compressed_without_transforms) < len(best_without_transforms):
-                    best_without_transforms = compressed_without_transforms
+                current_data = paq.decompress(best_with_rle)  # Continue with the best compressed data
 
-                current_data = paq.decompress(best_with_transforms)  # Continue with the best compressed data
-
-            # Choose the better result (with or without transformations)
-            if len(best_with_transforms) < len(best_without_transforms):
-                best_compressed = best_with_transforms
+            # Choose the better result (with or without RLE)
+            if len(best_with_rle) < len(best_without_rle):
+                best_compressed = best_with_rle
             else:
-                best_compressed = best_without_transforms
+                best_compressed = best_without_rle
 
         except Exception as e:
             print(f"Error during iteration {i + 1}: {e}")
