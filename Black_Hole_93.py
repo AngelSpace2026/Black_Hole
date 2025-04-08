@@ -39,12 +39,13 @@ def random_minus_blocks(data, block_size_bits=64):
     block_size = block_size_bits // 8
     if block_size == 0:
         raise ValueError("Block size cannot be 0 bytes")
+
     transformed_data = bytearray()
     metadata = bytearray()
     for i in range(0, len(data), block_size):
         block = data[i:i + block_size]
         if len(block) < block_size:
-            block += bytes(block_size - len(block))  # Pad block if smaller
+            block += bytes(block_size - len(block))  # Padding
         random_value = random.randint(1, 2 ** block_size_bits - 1)
         rand_bytes = random_value.to_bytes(block_size, byteorder='big')
         transformed_block = bytes([(b - rand_bytes[j % block_size]) % 256 for j, b in enumerate(block)])
@@ -60,27 +61,28 @@ def add_block_size_64(data):
     while i < len(data):
         block = data[i:i + block_size]
         if len(block) < block_size:
-            block += bytes(block_size - len(block))  # Pad block if smaller
+            block += bytes(block_size - len(block))  # Pad block if it's smaller than 64 bytes
         transformed_data.extend((block_size).to_bytes(2, 'big'))  # Add 2 bytes for block size (64)
         transformed_data.extend(block)  # Add the block data
         i += block_size  # Move to the next block
     return bytes(transformed_data)
 
-# RLE Encoding with 2-byte count
-def rle_encode_2byte(data):
+# RLE Encoding with 1-byte count (0-255)
+def rle_encode_1byte(data):
     if not data:
         return data
     encoded_data = bytearray()
     count = 1
     for i in range(1, len(data)):
-        if data[i] == data[i - 1] and count < 65535:
+        if data[i] == data[i - 1] and count < 255:
             count += 1
         else:
-            encoded_data.extend([data[i - 1]])
-            encoded_data.extend(count.to_bytes(2, 'big'))
+            encoded_data.extend([data[i - 1]])  # byte
+            encoded_data.extend([count])  # count (1 byte)
             count = 1
+    # Last byte and count
     encoded_data.extend([data[-1]])
-    encoded_data.extend(count.to_bytes(2, 'big'))
+    encoded_data.extend([count])
     return bytes(encoded_data)
 
 # Apply random transformations + always RLE
@@ -110,8 +112,12 @@ def apply_random_transformations(data, num_transforms=10):
             marker |= (1 << (i % 8))
         except Exception as e:
             print(f"Error applying transformation {transform.__name__}: {e}")
+
+    # Apply RLE encoding for files smaller than 1024 bytes
+    if len(transformed_data) < 1024:
+        transformed_data = rle_encode_1byte(transformed_data)
+
     transformed_data = add_block_size_64(transformed_data)  # Apply block size transformation for 64 bytes
-    transformed_data = rle_encode_2byte(transformed_data)
     return transformed_data, marker
 
 # Compression functions
@@ -133,6 +139,7 @@ def decompress_data(data):
 def compress_with_iterations(data, attempts, iterations):
     best_compressed = zlib_wrapper.compress(data)
     best_size = len(best_compressed)
+
     for i in tqdm(range(attempts), desc="Compression Attempts"):
         try:
             current_data = data
@@ -182,14 +189,8 @@ def get_positive_integer(prompt):
 def main():
     choice = input("Choose (1: Compress, 2: Extract): ")
     in_file = input("Input file: ")
-    
-    # Check if file size is smaller than 1024 bytes
-    if os.path.getsize(in_file) < 1024:
-        print("Error: File size is too small. The file must be at least 1024 bytes.")
-        return
-    
     out_file = input("Output file: ")
-    
+
     if choice == '1':
         attempts = get_positive_integer("Enter number of compression attempts: ")
         iterations = get_positive_integer("Enter number of iterations per attempt: ")
