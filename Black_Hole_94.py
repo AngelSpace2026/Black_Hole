@@ -31,19 +31,19 @@ def move_bits_right(data, n):
     return bytes([(byte >> n & 0xFF) | (byte << (8 - n)) & 0xFF for byte in data])
 
 def random_minus_blocks(data, block_size_bits=64):
-    block_sizes = [2**i for i in range(1, 33)]
-    if block_size_bits not in block_sizes:
-        raise ValueError("Invalid block size.")
+    valid_block_sizes = [2 ** i for i in range(1, 33)]  # Block sizes from 2^1 to 2^32
+    if block_size_bits not in valid_block_sizes:
+        raise ValueError(f"Invalid block size. Expected one of {valid_block_sizes}, got {block_size_bits}.")
     block_size = block_size_bits // 8
     if block_size == 0:
-        raise ValueError("Block size cannot be 0 bytes")
+        raise ValueError("Block size cannot be 0 bytes.")
 
     transformed_data = bytearray()
     metadata = bytearray()
     for i in range(0, len(data), block_size):
         block = data[i:i + block_size]
         if len(block) < block_size:
-            block += bytes(block_size - len(block))
+            block += bytes(block_size - len(block))  # Pad to block size if necessary
         random_value = random.randint(1, 2 ** block_size_bits - 1)
         rand_bytes = random_value.to_bytes(block_size, byteorder='big')
         transformed_block = bytes([(b - rand_bytes[j % block_size]) % 256 for j, b in enumerate(block)])
