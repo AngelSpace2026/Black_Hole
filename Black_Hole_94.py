@@ -77,16 +77,26 @@ def apply_random_transformations(data, num_transforms=10):
         (move_bits_right, True),
     ]
     transformed_data = data
+    chunk_size = 32  # 256 bits = 32 bytes
+    
+    # Ensure we process data in strict 256-bit chunks
+    chunked_data = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
+    
     for _ in range(num_transforms):
         transform, needs_param = random.choice(transforms)
         try:
-            if needs_param:
-                param = random.randint(1, 7)
-                transformed_data = transform(transformed_data, param)
-            else:
-                transformed_data = transform(transformed_data)
+            # Apply transformation to each chunk
+            for chunk in chunked_data:
+                if needs_param:
+                    param = random.randint(1, 7)
+                    transformed_chunk = transform(chunk, param)
+                else:
+                    transformed_chunk = transform(chunk)
+                
+                transformed_data = transformed_data.replace(chunk, transformed_chunk)
         except Exception as e:
             print(f"Error applying transformation {transform.__name__}: {e}")
+    
     return transformed_data
 
 # Compression function with PAQ compression
@@ -94,26 +104,30 @@ def compress_with_paq(data):
     best_compressed = apply_paq_compression(data)
     return best_compressed
 
-# Iterative compression logic
+# Iterative compression logic with progress printed on the same line
 def compress_with_iterations(data, attempts, iterations):
     best_compressed = zlib_wrapper.compress(data)
     best_size = len(best_compressed)
     
-    for i in tqdm(range(attempts), desc="Compression Attempts"):
+    for i in tqdm(range(attempts), desc="Compression Attempts", ncols=100, unit="attempt", leave=False):
         try:
             current_data = data
-            for j in tqdm(range(iterations), desc=f"Iteration {i + 1}", leave=False):
+            for j in tqdm(range(iterations), desc="Iterations", ncols=100, unit="iter", leave=False):
                 transformed_data = apply_random_transformations(current_data)
                 # Apply PAQ compression
                 compressed = compress_with_paq(transformed_data)
                 if len(compressed) < len(best_compressed):
                     best_compressed = compressed
                 current_data = zlib_wrapper.decompress(best_compressed)
-            if len(best_compressed) < best_size:
-                best_size = len(best_compressed)
+            
+            # Calculate percentage of progress
+            progress = (i + 1) / attempts * 100
+            print(f"\rProgress: {progress:.2f}% complete", end="")
+            
         except Exception as e:
             print(f"Error during iteration {i + 1}: {e}")
     
+    print()  # Move to the next line after progress completes
     return best_compressed
 
 # File I/O
@@ -132,15 +146,16 @@ def handle_file_io(func, file_name, data=None):
         print(f"Error during file I/O: {e}")
     return None
 
-# Function to add 1-byte header for the file size
+# Function to add 4-byte header for the file size
 def add_file_size_header(data):
     file_size = len(data)
-    header = bytes([file_size])  # 1 byte for file size
+    # Store the file size as a 4-byte integer
+    header = file_size.to_bytes(4, 'big')  # 4 bytes for file size (big-endian)
     return header + data
 
-# Function to remove the 1-byte header
+# Function to remove the 4-byte header
 def remove_file_size_header(data):
-    return data[1:]  # Remove the first byte (file size)
+    return data[4:]  # Remove the first 4 bytes (file size)
 
 # User input
 def get_positive_integer(prompt):
