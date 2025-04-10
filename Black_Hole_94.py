@@ -1,8 +1,7 @@
 import os
 import random
 import time
-import zlib
-import paq  # PAQ compression module (ensure it's working)
+import paq  # Assumed to be a working PAQ wrapper module
 from tqdm import tqdm
 
 # Compression using zlib (placeholder for PAQ)
@@ -33,39 +32,75 @@ def move_bits_right(data, n):
     n = n % 8
     return bytes([(byte >> n & 0xFF) | (byte << (8 - n)) & 0xFF for byte in data])
 
-# Function for PAQ compression check on various bit shifts and sizes
-def apply_paq_compression(data, block_sizes=[2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]):
-    best_compressed = None
-    best_size = float('inf')
-    
-    for block_size_bits in block_sizes:
-        block_size = block_size_bits // 8
-        if block_size == 0:
-            continue  # Skip if the block size is 0 (should not happen, but good for safety)
-        for shift in range(1, block_size_bits + 1):  # Shift sizes from 1 to block_size_bits
-            # Process data in chunks
-            chunked_data = [data[i:i + block_size] for i in range(0, len(data), block_size)]
-            processed_data = b""
-            for chunk in chunked_data:
-                # Move bits and apply shift
-                shifted_chunk = move_bits_left(chunk, shift)
-                processed_data += shifted_chunk
-            # Now compress the transformed chunk with PAQ
-            compressed = paq.compress(processed_data)
-            if len(compressed) < best_size:
-                best_compressed = compressed
-                best_size = len(compressed)
-                
-    # Now also apply doubling to 2^32 for large blocks (1024 bits)
-    if block_size_bits == 1024:
-        for shift in range(1, 33):  # Apply shift up to 2^32 for 1024-bit block
-            shifted_data = move_bits_left(data, shift)
-            compressed = paq.compress(shifted_data)
-            if len(compressed) < best_size:
-                best_compressed = compressed
-                best_size = len(compressed)
-    
-    return best_compressed
+# Shift and count zeros and ones in a 256-bit block
+def shift_and_count(data, block_size=256):
+    assert block_size % 8 == 0, "Block size must be a multiple of 8 bits"
+
+    shifted_data = bytearray()
+    most_repeats = 0
+    best_shift = 0
+
+    # Split the data into 256-bit blocks (32 bytes)
+    for i in range(0, len(data), block_size // 8):
+        block = data[i:i + (block_size // 8)]
+
+        # Ensure the block is the correct size, padding if needed
+        if len(block) < block_size // 8:
+            block += bytes(block_size // 8 - len(block))
+
+        # Try shifting the block from 0 to 255 bits
+        best_zeros = 0
+        best_ones = 0
+        for shift in range(block_size):
+            shifted_block = move_bits_left(block, shift)
+            zeros = shifted_block.count(0)
+            ones = len(shifted_block) * 8 - zeros
+            # Track the best shift based on the highest repetition of 0s or 1s
+            if zeros > best_zeros:
+                best_zeros = zeros
+                most_repeats = zeros
+                best_shift = shift
+            if ones > best_ones:
+                best_ones = ones
+                most_repeats = ones
+                best_shift = shift
+
+        # Shift the block according to the best shift and append it
+        shifted_data.extend(move_bits_left(block, best_shift))
+
+    return shifted_data, best_shift
+
+# Add 2-byte block size for each block of size 64 bytes
+def add_block_size_64(data):
+    transformed_data = bytearray()
+    block_size = 64  # Fixed block size of 64 bytes
+    i = 0
+    while i < len(data):
+        block = data[i:i + block_size]
+        if len(block) < block_size:
+            block += bytes(block_size - len(block))  # Pad block if it's smaller than 64 bytes
+        transformed_data.extend((block_size).to_bytes(2, 'big'))  # Add 2 bytes for block size (64)
+        transformed_data.extend(block)  # Add the block data
+        i += block_size  # Move to the next block
+    return bytes(transformed_data)
+
+# RLE Encoding with 1-byte count (0-255)
+def rle_encode_1byte(data):
+    if not data:
+        return data
+    encoded_data = bytearray()
+    count = 1
+    for i in range(1, len(data)):
+        if data[i] == data[i - 1] and count < 255:
+            count += 1
+        else:
+            encoded_data.extend([data[i - 1]])  # byte
+            encoded_data.extend([count])  # count (1 byte)
+            count = 1
+    # Last byte and count
+    encoded_data.extend([data[-1]])
+    encoded_data.extend([count])
+    return bytes(encoded_data)
 
 # Apply random transformations + always RLE
 def apply_random_transformations(data, num_transforms=10):
@@ -75,59 +110,68 @@ def apply_random_transformations(data, num_transforms=10):
         (subtract_1_from_each_byte, False),
         (move_bits_left, True),
         (move_bits_right, True),
+        (shift_and_count, False)
     ]
+    marker = 0
     transformed_data = data
-    chunk_size = 32  # 256 bits = 32 bytes
-    
-    # Ensure we process data in strict 256-bit chunks
-    chunked_data = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
-    
-    for _ in range(num_transforms):
+    for i in range(num_transforms):
         transform, needs_param = random.choice(transforms)
         try:
-            # Apply transformation to each chunk
-            for chunk in chunked_data:
-                if needs_param:
-                    param = random.randint(1, 7)
-                    transformed_chunk = transform(chunk, param)
-                else:
-                    transformed_chunk = transform(chunk)
-                
-                transformed_data = transformed_data.replace(chunk, transformed_chunk)
+            if transform == shift_and_count:
+                # Apply shift_and_count to shift and track most frequent zeros/ones
+                transformed_data, best_shift = transform(transformed_data)
+                print(f"Best shift found: {best_shift}")
+            elif needs_param:
+                param = random.randint(1, 7)
+                transformed_data = transform(transformed_data, param)
+            else:
+                transformed_data = transform(transformed_data)
+            marker |= (1 << (i % 8))
         except Exception as e:
             print(f"Error applying transformation {transform.__name__}: {e}")
-    
-    return transformed_data
 
-# Compression function with PAQ compression
-def compress_with_paq(data):
-    best_compressed = apply_paq_compression(data)
-    return best_compressed
+    # Apply RLE encoding for files smaller than 1024 bytes
+    if len(transformed_data) < 1024:
+        transformed_data = rle_encode_1byte(transformed_data)
 
-# Iterative compression logic with progress printed on the same line
+    transformed_data = add_block_size_64(transformed_data)  # Apply block size transformation for 64 bytes
+    return transformed_data, marker
+
+# Compression functions
+def compress_data(data):
+    try:
+        return zlib_wrapper.compress(data)
+    except Exception as e:
+        print(f"Error during zlib compression: {e}")
+    return data
+
+def decompress_data(data):
+    try:
+        return zlib_wrapper.decompress(data)
+    except Exception as e:
+        print(f"Error during zlib decompression: {e}")
+    return data
+
+# Iterative compression logic
 def compress_with_iterations(data, attempts, iterations):
     best_compressed = zlib_wrapper.compress(data)
     best_size = len(best_compressed)
-    
-    for i in tqdm(range(attempts), desc="Compression Attempts", ncols=100, unit="attempt", leave=False):
+
+    for i in tqdm(range(attempts), desc="Compression Attempts"):
         try:
             current_data = data
-            for j in tqdm(range(iterations), desc="Iterations", ncols=100, unit="iter", leave=False):
-                transformed_data = apply_random_transformations(current_data)
-                # Apply PAQ compression
-                compressed = compress_with_paq(transformed_data)
-                if len(compressed) < len(best_compressed):
-                    best_compressed = compressed
-                current_data = zlib_wrapper.decompress(best_compressed)
-            
-            # Calculate percentage of progress
-            progress = (i + 1) / attempts * 100
-            print(f"\rProgress: {progress:.2f}% complete", end="")
-            
+            best_this_attempt = best_compressed
+            for j in tqdm(range(iterations), desc=f"Iteration {i + 1}", leave=False):
+                transformed, marker = apply_random_transformations(current_data)
+                compressed = zlib_wrapper.compress(transformed)
+                if len(compressed) < len(best_this_attempt):
+                    best_this_attempt = compressed
+                current_data = zlib_wrapper.decompress(best_this_attempt)
+            if len(best_this_attempt) < best_size:
+                best_compressed = best_this_attempt
+                best_size = len(best_this_attempt)
         except Exception as e:
             print(f"Error during iteration {i + 1}: {e}")
-    
-    print()  # Move to the next line after progress completes
     return best_compressed
 
 # File I/O
@@ -146,17 +190,6 @@ def handle_file_io(func, file_name, data=None):
         print(f"Error during file I/O: {e}")
     return None
 
-# Function to add 4-byte header for the file size
-def add_file_size_header(data):
-    file_size = len(data)
-    # Store the file size as a 4-byte integer
-    header = file_size.to_bytes(4, 'big')  # 4 bytes for file size (big-endian)
-    return header + data
-
-# Function to remove the 4-byte header
-def remove_file_size_header(data):
-    return data[4:]  # Remove the first 4 bytes (file size)
-
 # User input
 def get_positive_integer(prompt):
     while True:
@@ -174,28 +207,24 @@ def main():
     choice = input("Choose (1: Compress, 2: Extract): ")
     in_file = input("Input file: ")
     out_file = input("Output file: ")
-    
+
     if choice == '1':
         attempts = get_positive_integer("Enter number of compression attempts: ")
         iterations = get_positive_integer("Enter number of iterations per attempt: ")
         data = handle_file_io(lambda x: x, in_file)
         if data:
-            # Add the file size header before compression
-            data_with_header = add_file_size_header(data)
             start_time = time.time()
-            compressed_data = compress_with_iterations(data_with_header, attempts, iterations)
+            compressed_data = compress_with_iterations(data, attempts, iterations)
             end_time = time.time()
             handle_file_io(lambda x: x, out_file, compressed_data)
             print(f"Compressed to {out_file} in {end_time - start_time:.2f} seconds")
     elif choice == '2':
-        data = handle_file_io(zlib_wrapper.decompress, in_file)
+        data = handle_file_io(decompress_data, in_file)
         if data:
-            # Remove the file size header during extraction
-            original_data = remove_file_size_header(data)
-            handle_file_io(lambda x: x, out_file, original_data)
+            handle_file_io(lambda x: x, out_file, data)
             print(f"Extracted to {out_file}")
-        else:
-            print("Invalid choice. Please enter 1 for compression or 2 for extraction.")
+    else:
+        print("Invalid choice")
 
 if __name__ == "__main__":
     main()
