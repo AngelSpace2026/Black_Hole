@@ -9,11 +9,11 @@ from tqdm import tqdm
 class zlib_wrapper:
     @staticmethod
     def compress(data):
-        return zlib.compress(data)
+        return paq.compress(data)
 
     @staticmethod
     def decompress(data):
-        return zlib.decompress(data)
+        return paq.decompress(data)
 
 # Reversible Transformation Functions
 def reverse_chunk(data, chunk_size):
