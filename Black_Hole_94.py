@@ -109,10 +109,10 @@ def compress_with_iterations(data, attempts, iterations):
     best_compressed = zlib_wrapper.compress(data)
     best_size = len(best_compressed)
     
-    for i in range(attempts):
+    for i in tqdm(range(attempts), desc="Compression Attempts", ncols=100, unit="attempt", leave=False):
         try:
             current_data = data
-            for j in range(iterations):
+            for j in tqdm(range(iterations), desc="Iterations", ncols=100, unit="iter", leave=False):
                 transformed_data = apply_random_transformations(current_data)
                 # Apply PAQ compression
                 compressed = compress_with_paq(transformed_data)
@@ -146,6 +146,17 @@ def handle_file_io(func, file_name, data=None):
         print(f"Error during file I/O: {e}")
     return None
 
+# Function to add 4-byte header for the file size
+def add_file_size_header(data):
+    file_size = len(data)
+    # Store the file size as a 4-byte integer
+    header = file_size.to_bytes(4, 'big')  # 4 bytes for file size (big-endian)
+    return header + data
+
+# Function to remove the 4-byte header
+def remove_file_size_header(data):
+    return data[4:]  # Remove the first 4 bytes (file size)
+
 # User input
 def get_positive_integer(prompt):
     while True:
@@ -169,15 +180,19 @@ def main():
         iterations = get_positive_integer("Enter number of iterations per attempt: ")
         data = handle_file_io(lambda x: x, in_file)
         if data:
+            # Add the file size header before compression
+            data_with_header = add_file_size_header(data)
             start_time = time.time()
-            compressed_data = compress_with_iterations(data, attempts, iterations)
+            compressed_data = compress_with_iterations(data_with_header, attempts, iterations)
             end_time = time.time()
             handle_file_io(lambda x: x, out_file, compressed_data)
             print(f"Compressed to {out_file} in {end_time - start_time:.2f} seconds")
     elif choice == '2':
         data = handle_file_io(zlib_wrapper.decompress, in_file)
         if data:
-            handle_file_io(lambda x: x, out_file, data)
+            # Remove the file size header during extraction
+            original_data = remove_file_size_header(data)
+            handle_file_io(lambda x: x, out_file, original_data)
             print(f"Extracted to {out_file}")
         else:
             print("Invalid choice. Please enter 1 for compression or 2 for extraction.")
