@@ -42,32 +42,29 @@ def apply_paq_compression(data, block_sizes=[2, 4, 8, 16, 32, 64, 128, 256, 512,
         block_size = block_size_bits // 8
         if block_size == 0:
             continue  # Skip if the block size is 0 (should not happen, but good for safety)
-        
         for shift in range(1, block_size_bits + 1):  # Shift sizes from 1 to block_size_bits
             # Process data in chunks
             chunked_data = [data[i:i + block_size] for i in range(0, len(data), block_size)]
             processed_data = b""
-
             for chunk in chunked_data:
                 # Move bits and apply shift
                 shifted_chunk = move_bits_left(chunk, shift)
                 processed_data += shifted_chunk
-
             # Now compress the transformed chunk with PAQ
             compressed = paq.compress(processed_data)
             if len(compressed) < best_size:
                 best_compressed = compressed
                 best_size = len(compressed)
-
-        # Now also apply doubling to 2^32 for large blocks (1024 bits)
-        if block_size_bits == 1024:
-            for shift in range(1, 33):  # Apply shift up to 2^32 for 1024-bit block
-                shifted_data = move_bits_left(data, shift)
-                compressed = paq.compress(shifted_data)
-                if len(compressed) < best_size:
-                    best_compressed = compressed
-                    best_size = len(compressed)
-
+                
+    # Now also apply doubling to 2^32 for large blocks (1024 bits)
+    if block_size_bits == 1024:
+        for shift in range(1, 33):  # Apply shift up to 2^32 for 1024-bit block
+            shifted_data = move_bits_left(data, shift)
+            compressed = paq.compress(shifted_data)
+            if len(compressed) < best_size:
+                best_compressed = compressed
+                best_size = len(compressed)
+    
     return best_compressed
 
 # Apply random transformations + always RLE
@@ -101,7 +98,7 @@ def compress_with_paq(data):
 def compress_with_iterations(data, attempts, iterations):
     best_compressed = zlib_wrapper.compress(data)
     best_size = len(best_compressed)
-
+    
     for i in tqdm(range(attempts), desc="Compression Attempts"):
         try:
             current_data = data
@@ -116,6 +113,7 @@ def compress_with_iterations(data, attempts, iterations):
                 best_size = len(best_compressed)
         except Exception as e:
             print(f"Error during iteration {i + 1}: {e}")
+    
     return best_compressed
 
 # File I/O
@@ -134,6 +132,16 @@ def handle_file_io(func, file_name, data=None):
         print(f"Error during file I/O: {e}")
     return None
 
+# Function to add 1-byte header for the file size
+def add_file_size_header(data):
+    file_size = len(data)
+    header = bytes([file_size])  # 1 byte for file size
+    return header + data
+
+# Function to remove the 1-byte header
+def remove_file_size_header(data):
+    return data[1:]  # Remove the first byte (file size)
+
 # User input
 def get_positive_integer(prompt):
     while True:
@@ -151,21 +159,25 @@ def main():
     choice = input("Choose (1: Compress, 2: Extract): ")
     in_file = input("Input file: ")
     out_file = input("Output file: ")
-
+    
     if choice == '1':
         attempts = get_positive_integer("Enter number of compression attempts: ")
         iterations = get_positive_integer("Enter number of iterations per attempt: ")
         data = handle_file_io(lambda x: x, in_file)
         if data:
+            # Add the file size header before compression
+            data_with_header = add_file_size_header(data)
             start_time = time.time()
-            compressed_data = compress_with_iterations(data, attempts, iterations)
+            compressed_data = compress_with_iterations(data_with_header, attempts, iterations)
             end_time = time.time()
             handle_file_io(lambda x: x, out_file, compressed_data)
             print(f"Compressed to {out_file} in {end_time - start_time:.2f} seconds")
     elif choice == '2':
         data = handle_file_io(zlib_wrapper.decompress, in_file)
         if data:
-            handle_file_io(lambda x: x, out_file, data)
+            # Remove the file size header during extraction
+            original_data = remove_file_size_header(data)
+            handle_file_io(lambda x: x, out_file, original_data)
             print(f"Extracted to {out_file}")
         else:
             print("Invalid choice. Please enter 1 for compression or 2 for extraction.")
