@@ -1,7 +1,12 @@
 import os
 import random
 import struct
-import paq
+
+# Ensure paq module is valid
+try:
+    import paq
+except ImportError:
+    raise ImportError("PAQ module is not properly loaded. Please ensure it's installed and accessible.")
 
 # Constants
 MAX_POSITIONS = 64  # Maximum number of chunk positions to reverse
@@ -25,7 +30,11 @@ def compress_data(data, chunk_size, positions, original_size, calculus_value):
     """Compresses data using PAQ and embeds metadata."""
     metadata = struct.pack(">III", original_size, chunk_size, calculus_value) + \
                struct.pack(">B", len(positions)) + struct.pack(f">{len(positions)}I", *positions)
-    return paq.compress(metadata + data)
+    try:
+        compressed_data = paq.compress(metadata + data)
+    except Exception as e:
+        raise Exception(f"Error during compression with PAQ: {e}")
+    return compressed_data
 
 def decompress_data(compressed_data):
     """Decompresses data and extracts metadata."""
@@ -67,17 +76,16 @@ def process_large_file(input_filename, output_filename, mode, attempts=1, iterat
     """Handles large files and applies compression or decompression."""
     if not os.path.exists(input_filename):
         raise FileNotFoundError(f"Error: Input file '{input_filename}' not found.")
-
+    
     with open(input_filename, 'rb') as infile:
         file_data = infile.read()
-
+    
     if mode == "compress":
         best_compressed_data, best_ratio = find_best_iteration(file_data, iterations, fixed_chunk_size)
         if best_compressed_data:
             with open(output_filename, 'wb') as outfile:
                 outfile.write(best_compressed_data)
             print(f"Best compression saved as: {output_filename}, ratio: {best_ratio:.4f}")
-
     elif mode == "decompress":
         try:
             restored_data = decompress_data(file_data)
@@ -89,7 +97,6 @@ def process_large_file(input_filename, output_filename, mode, attempts=1, iterat
 
 def main():
     print("Created by Jurijus Pacalovas.")
-
     while True:
         try:
             mode = int(input("Enter mode (1 for compress, 2 for decompress): "))
