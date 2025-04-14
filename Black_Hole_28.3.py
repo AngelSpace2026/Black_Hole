@@ -4,15 +4,14 @@ import struct
 
 # Ensure paq module is valid
 try:
-    import paq
+    import paq  # Placeholder, replace with actual PAQ binding or compatible library
 except ImportError:
     raise ImportError("PAQ module is not properly loaded. Please ensure it's installed and accessible.")
 
 # Constants
-MAX_POSITIONS = 64  # Maximum number of chunk positions to reverse
+MAX_POSITIONS = 64
 
 def reverse_chunks(data, chunk_size, positions):
-    """Reverses specified chunks of byte data."""
     chunked_data = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
     for pos in positions:
         if 0 <= pos < len(chunked_data):
@@ -20,14 +19,12 @@ def reverse_chunks(data, chunk_size, positions):
     return b"".join(chunked_data)
 
 def apply_calculus(data, calculus_value):
-    """Applies bitwise transformations to each byte."""
-    transformed_data = bytearray(data)
-    for i in range(len(transformed_data)):
-        transformed_data[i] ^= (calculus_value & 0xFF)  # XOR with last 8 bits
-    return bytes(transformed_data)
+    transformed = bytearray(data)
+    for i in range(len(transformed)):
+        transformed[i] ^= (calculus_value & 0xFF)
+    return bytes(transformed)
 
 def compress_data(data, chunk_size, positions, original_size, calculus_value):
-    """Compresses data using PAQ and embeds metadata."""
     metadata = struct.pack(">III", original_size, chunk_size, calculus_value) + \
                struct.pack(">B", len(positions)) + struct.pack(f">{len(positions)}I", *positions)
     try:
@@ -37,55 +34,61 @@ def compress_data(data, chunk_size, positions, original_size, calculus_value):
     return compressed_data
 
 def decompress_data(compressed_data):
-    """Decompresses data and extracts metadata."""
     try:
         decompressed_data = paq.decompress(compressed_data)
         original_size, chunk_size, calculus_value = struct.unpack(">III", decompressed_data[:12])
         num_positions = struct.unpack(">B", decompressed_data[12:13])[0]
         positions = struct.unpack(f">{num_positions}I", decompressed_data[13:13 + num_positions * 4])
-        restored_data = reverse_chunks(decompressed_data[13 + num_positions * 4:], chunk_size, positions)
-        restored_data = apply_calculus(restored_data, calculus_value)
-        return restored_data[:original_size]
+        data_start = 13 + num_positions * 4
+        restored = reverse_chunks(decompressed_data[data_start:], chunk_size, positions)
+        restored = apply_calculus(restored, calculus_value)
+        return restored[:original_size]
     except (struct.error, paq.error) as e:
-        raise Exception(f"Error during decompression: {e}") from None
+        raise Exception(f"Error during decompression: {e}")
 
-def find_best_iteration(input_data, max_iterations, fixed_chunk_size):
-    """Finds the best compression within a specified number of iterations using a heuristic."""
-    best_compression_ratio = float('inf')
-    best_compressed_data = None
+def find_best_iteration(input_data, max_iterations, chunk_size):
+    best_result = compress_data(input_data, chunk_size, [], len(input_data), 0)
+    best_size = len(best_result)
+    best_ratio = best_size / len(input_data)
+    best_data = best_result
 
-    for _ in range(max_iterations):
-        chunk_size = fixed_chunk_size
+    for i in range(1, max_iterations + 1):
         x = random.randint(7, 17)
         calculus_value = random.randint(1, (2 ** x) - 1)
-        num_positions = random.randint(0, min(len(input_data) // chunk_size, MAX_POSITIONS))
-        positions = sorted(random.sample(range(len(input_data) // chunk_size), num_positions)) if num_positions > 0 else []
+        num_pos = random.randint(0, min(len(input_data) // chunk_size, MAX_POSITIONS))
+        positions = sorted(random.sample(range(len(input_data) // chunk_size), num_pos)) if num_pos > 0 else []
 
-        transformed_data = apply_calculus(input_data, calculus_value)
-        reversed_data = reverse_chunks(transformed_data, chunk_size, positions)
-        compressed_data = compress_data(reversed_data, chunk_size, positions, len(input_data), calculus_value)
+        transformed = apply_calculus(input_data, calculus_value)
+        reversed_data = reverse_chunks(transformed, chunk_size, positions)
+        try:
+            compressed = compress_data(reversed_data, chunk_size, positions, len(input_data), calculus_value)
+        except:
+            continue
 
-        compression_ratio = len(compressed_data) / len(input_data)
-        if compression_ratio < best_compression_ratio:
-            best_compression_ratio = compression_ratio
-            best_compressed_data = compressed_data
+        comp_size = len(compressed)
+        if comp_size < best_size:
+            best_size = comp_size
+            best_data = compressed
+            best_ratio = comp_size / len(input_data)
+            saved = len(input_data) - comp_size
+            print(f"Iteration {i}: Compressed size {comp_size}, Saved {saved} bytes, Ratio: {best_ratio:.5f}")
 
-    return best_compressed_data, best_compression_ratio
+    print(f"\nFinal best saved {len(input_data) - best_size} bytes, Ratio: {best_ratio:.5f}")
+    return best_data, best_ratio
 
 def process_large_file(input_filename, output_filename, mode, attempts=1, iterations=100, fixed_chunk_size=None):
-    """Handles large files and applies compression or decompression."""
     if not os.path.exists(input_filename):
         raise FileNotFoundError(f"Error: Input file '{input_filename}' not found.")
-    
+
     with open(input_filename, 'rb') as infile:
         file_data = infile.read()
-    
+
     if mode == "compress":
         best_compressed_data, best_ratio = find_best_iteration(file_data, iterations, fixed_chunk_size)
         if best_compressed_data:
             with open(output_filename, 'wb') as outfile:
                 outfile.write(best_compressed_data)
-            print(f"Best compression saved as: {output_filename}, ratio: {best_ratio:.4f}")
+            print(f"\nBest compression saved to: {output_filename}")
     elif mode == "decompress":
         try:
             restored_data = decompress_data(file_data)
@@ -100,17 +103,16 @@ def main():
     while True:
         try:
             mode = int(input("Enter mode (1 for compress, 2 for decompress): "))
-            if mode not in [1, 2]:
-                print("Error: Please enter 1 for compress or 2 for decompress.")
-            else:
+            if mode in [1, 2]:
                 break
+            else:
+                print("Please enter 1 or 2.")
         except ValueError:
-            print("Error: Invalid input. Please enter a number (1 or 2).")
+            print("Invalid input. Please enter 1 or 2.")
 
     if mode == 1:
         input_filename = input("Enter input file name to compress: ")
         output_filename = input("Enter output file name (e.g., output.compressed.bin): ")
-
         while True:
             try:
                 n = int(input("Enter a number n (2 to 28) for 2^n chunk size: "))
@@ -119,25 +121,27 @@ def main():
                 else:
                     print("Please enter a number between 2 and 28.")
             except ValueError:
-                print("Error: Please enter a valid integer.")
+                print("Invalid input. Please enter an integer.")
 
         while True:
             try:
-                attempts = int(input("Enter the number of attempts (e.g., 5): "))
-                iterations = int(input("Enter the number of iterations (e.g., 100): "))
-                if attempts <= 0 or iterations <= 0:
-                    print("Please enter positive integers for both attempts and iterations.")
-                else:
+                attempts = int(input("Enter number of attempts (e.g., 5): "))
+                iterations = int(input("Enter number of iterations per attempt (e.g., 100): "))
+                if attempts > 0 and iterations > 0:
                     break
+                else:
+                    print("Please enter positive integers.")
             except ValueError:
-                print("Error: Please enter valid numbers for attempts and iterations.")
+                print("Invalid input. Please enter integers.")
 
         chunk_size = 2 ** n
-        process_large_file(input_filename, output_filename, "compress", attempts=attempts, iterations=iterations, fixed_chunk_size=chunk_size)
+        for attempt in range(1, attempts + 1):
+            print(f"\n--- Attempt {attempt} ---")
+            process_large_file(input_filename, output_filename, "compress", attempts=1, iterations=iterations, fixed_chunk_size=chunk_size)
 
     elif mode == 2:
-        compressed_filename = input("Enter the full name of the compressed file to decompress: ")
-        output_filename = input("Enter the name for the decompressed file: ")
+        compressed_filename = input("Enter the compressed file name: ")
+        output_filename = input("Enter name for the decompressed output: ")
         process_large_file(compressed_filename, output_filename, "decompress")
 
 if __name__ == "__main__":
