@@ -118,7 +118,7 @@ def main():
                     print(f"Using chunk size: {chunk_size} bytes")
                     break
                 else:
-                    print("Please enter a number between 0 and 28.")
+                    print("Please enter a number between 0 and 5.")
             except ValueError:
                 print("Invalid input. Please enter an integer.")
 
