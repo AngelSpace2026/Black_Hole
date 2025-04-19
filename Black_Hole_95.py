@@ -2,10 +2,10 @@ import random
 import time
 from qiskit import QuantumCircuit
 from tqdm import tqdm
+import zstandard as zstd
 
 # --- Quantum Random Bytes Mock (without Aer or execute) ---
 def quantum_random_bytes_mock(num_bits=2000):
-    # Generate random bits as a classical substitute
     return bytes([random.getrandbits(8) for _ in range((num_bits + 7) // 8)])
 
 # --- Reversible Transformation Functions ---
@@ -31,7 +31,7 @@ def quantum_minus_blocks(data, block_size_bits=64):
         raise ValueError("Block size cannot be 0 bytes")
     transformed_data = bytearray()
     metadata = bytearray()
-    qr_bytes = quantum_random_bytes_mock(2000)  # Mocked quantum bytes
+    qr_bytes = quantum_random_bytes_mock(2000)
     for i in range(0, len(data), block_size):
         block = data[i:i + block_size]
         if len(block) < block_size:
@@ -77,19 +77,23 @@ def rle_encode_1byte(data):
         if data[i] == data[i - 1] and count < 255:
             count += 1
         else:
-            encoded_data.extend([data[i - 1]])
-            encoded_data.extend([count])
+            encoded_data.extend([data[i - 1], count])
             count = 1
-    encoded_data.extend([data[-1]])
-    encoded_data.extend([count])
+    encoded_data.extend([data[-1], count])
     return bytes(encoded_data)
 
-# --- Placeholder for PAQ compression using reverse for now ---
-class zlib_wrapper:
+# --- Zstandard Compression Wrapper ---
+class zstd_wrapper:
+    compressor = zstd.ZstdCompressor()
+    decompressor = zstd.ZstdDecompressor()
+
     @staticmethod
-    def compress(data): return data[::-1]
+    def compress(data):
+        return zstd_wrapper.compressor.compress(data)
+
     @staticmethod
-    def decompress(data): return data[::-1]
+    def decompress(data):
+        return zstd_wrapper.decompressor.decompress(data)
 
 def apply_random_transformations(data, num_transforms=10):
     transforms = [
@@ -123,14 +127,14 @@ def apply_random_transformations(data, num_transforms=10):
 
 def compress_data(data):
     try:
-        return zlib_wrapper.compress(data)
+        return zstd_wrapper.compress(data)
     except Exception as e:
         print(f"Compression error: {e}")
         return data
 
 def decompress_data(data):
     try:
-        return zlib_wrapper.decompress(data)
+        return zstd_wrapper.decompress(data)
     except Exception as e:
         print(f"Decompression error: {e}")
         return data
