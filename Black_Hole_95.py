@@ -1,30 +1,12 @@
-import os
 import random
 import time
-import zstandard as zstd
 from qiskit import QuantumCircuit
-from qiskit.quantum_info import Statevector
 from tqdm import tqdm
 
-# --- Zstd Wrapper for Real Compression ---
-class zlib_wrapper:
-    @staticmethod
-    def compress(data):
-        try:
-            compressor = zstd.ZstdCompressor()
-            return compressor.compress(data)
-        except Exception as e:
-            print(f"Zstd compression error: {e}")
-            return data
-
-    @staticmethod
-    def decompress(data):
-        try:
-            decompressor = zstd.ZstdDecompressor()
-            return decompressor.decompress(data)
-        except Exception as e:
-            print(f"Zstd decompression error: {e}")
-            return data
+# --- Quantum Random Bytes Mock (without Aer or execute) ---
+def quantum_random_bytes_mock(num_bits=2000):
+    # Generate random bits as a classical substitute
+    return bytes([random.getrandbits(8) for _ in range((num_bits + 7) // 8)])
 
 # --- Reversible Transformation Functions ---
 def reverse_chunk(data, chunk_size): return data[::-1]
@@ -43,28 +25,18 @@ def move_bits_right(data, n):
     n = n % 8
     return bytes([(byte >> n & 0xFF) | (byte << (8 - n)) & 0xFF for byte in data])
 
-def quantum_random_bytes(n_bytes=250):
-    circuit = QuantumCircuit(n_bytes)
-    circuit.h(range(n_bytes))
-    state = Statevector.from_instruction(circuit)
-    measured = state.sample_counts(shots=1)
-    binary = list(measured.keys())[0]
-    while len(binary) < 8 * n_bytes:
-        binary = '0' + binary
-    return int(binary, 2).to_bytes(n_bytes, 'big')
-
 def quantum_minus_blocks(data, block_size_bits=64):
     block_size = block_size_bits // 8
     if block_size == 0:
         raise ValueError("Block size cannot be 0 bytes")
     transformed_data = bytearray()
     metadata = bytearray()
+    qr_bytes = quantum_random_bytes_mock(2000)  # Mocked quantum bytes
     for i in range(0, len(data), block_size):
         block = data[i:i + block_size]
         if len(block) < block_size:
             block += bytes(block_size - len(block))
-        qr_bytes = quantum_random_bytes(250)
-        transformed_block = bytes([(b - qr_bytes[j % 250]) % 256 for j, b in enumerate(block)])
+        transformed_block = bytes([(b - qr_bytes[j % len(qr_bytes)]) % 256 for j, b in enumerate(block)])
         transformed_data.extend(transformed_block)
         metadata.extend(qr_bytes)
     return bytes(transformed_data), bytes(metadata)
@@ -111,6 +83,13 @@ def rle_encode_1byte(data):
     encoded_data.extend([data[-1]])
     encoded_data.extend([count])
     return bytes(encoded_data)
+
+# --- Placeholder for PAQ compression using reverse for now ---
+class zlib_wrapper:
+    @staticmethod
+    def compress(data): return data[::-1]
+    @staticmethod
+    def decompress(data): return data[::-1]
 
 def apply_random_transformations(data, num_transforms=10):
     transforms = [
