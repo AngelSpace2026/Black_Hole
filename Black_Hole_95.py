@@ -65,7 +65,7 @@ def dictionary_specific_transforms(data, qc):
 
 def quantum_dict_compress(data, attempts=8, iterations=4):
     qc = QuantumDictionaryCompressor()
-    best = zlib.compress(data)
+    best = paq.compress(data)
     best_size = len(best)
     for _ in tqdm(range(attempts), desc="Dictionary Compression"):
         transformed = data
