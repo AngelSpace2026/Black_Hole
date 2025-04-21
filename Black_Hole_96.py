@@ -1,14 +1,19 @@
 from qiskit import QuantumRegister
-import paq
+import zlib
 
-# Store data using Qiskit QuantumRegister (simulated)
+# Function to simulate storing data in qubits (chunked if too large)
 def store_in_qubits(data):
-    bit_length = len(data) * 8
-    if bit_length > 3000:
-        raise ValueError("Data too large to store in 3000 qubits.")
+    bit_length = len(data) * 8  # Convert data length to bits
     
-    qubits = QuantumRegister(bit_length, name='q')
-    print(f"Simulated storing {bit_length} bits in {len(qubits)} qubits.")
+    # Calculate how many chunks of 2000 qubits (2000 bits) are needed
+    chunks = (bit_length // 2000) + (1 if bit_length % 2000 != 0 else 0)
+    
+    qubits = []
+    for _ in range(chunks):
+        qubits.append(QuantumRegister(min(2000, len(data) * 8), name='q'))
+        data = data[2000:]  # Slice off the chunk
+
+    print(f"Simulated storing data in {len(qubits)} quantum registers.")
     return qubits
 
 # Write compressed file with 4-byte size header
@@ -16,8 +21,8 @@ def compress_to_file(input_file, output_file):
     with open(input_file, 'rb') as f:
         data = f.read()
     
-    compressed = paq.compress(data)
-    size_bytes = len(compressed).to_bytes(4, byteorder='big')
+    compressed = zlib.compress(data)
+    size_bytes = len(compressed).to_bytes(4, byteorder='big')  # 4-byte header for size
     final_data = size_bytes + compressed
 
     store_in_qubits(final_data)  # Simulate storing in qubits
@@ -35,7 +40,7 @@ def extract_from_file(input_file, output_file):
     size = int.from_bytes(stored_data[:4], byteorder='big')
     compressed = stored_data[4:4+size]
 
-    data = paq.decompress(compressed)
+    data = zlib.decompress(compressed)
 
     with open(output_file, 'wb') as f:
         f.write(data)
