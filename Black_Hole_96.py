@@ -1,5 +1,5 @@
 from qiskit import QuantumRegister
-import zlib
+import paq
 
 # Function to simulate storing data in qubits (chunked if too large)
 def store_in_qubits(data):
@@ -21,7 +21,7 @@ def compress_to_file(input_file, output_file):
     with open(input_file, 'rb') as f:
         data = f.read()
     
-    compressed = zlib.compress(data)
+    compressed = paq.compress(data)
     size_bytes = len(compressed).to_bytes(4, byteorder='big')  # 4-byte header for size
     final_data = size_bytes + compressed
 
@@ -40,7 +40,7 @@ def extract_from_file(input_file, output_file):
     size = int.from_bytes(stored_data[:4], byteorder='big')
     compressed = stored_data[4:4+size]
 
-    data = zlib.decompress(compressed)
+    data = paq.decompress(compressed)
 
     with open(output_file, 'wb') as f:
         f.write(data)
