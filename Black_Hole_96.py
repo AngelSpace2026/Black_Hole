@@ -1,9 +1,10 @@
 import os
 import random
 import time
-import zlib # PAQ compression library
+import struct
+import zlib  # PAQ compression library
 from tqdm import tqdm
-from qiskit import QuantumCircuit, QuantumRegister, execute, Aer
+from math import ceil
 
 # ======================
 # Compression Components
@@ -35,42 +36,39 @@ def move_bits_left(data, n):
     n = n % 8
     return bytes([((byte << n) & 0xFF) | ((byte >> (8 - n)) & 0xFF) for byte in data])
 
-def random_minus_blocks(data, block_size_bits=64):
-    valid_sizes = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
-    assert block_size_bits in valid_sizes, "Invalid block size"
+def random_64bit_minus(data):
+    """Enhanced 64-bit subtraction transform"""
+    if len(data) % 8 != 0:
+        data += bytes(8 - (len(data) % 8))  # Pad to 8-byte multiples
     
-    block_size = block_size_bits // 8
     transformed = bytearray()
     metadata = bytearray()
     
-    for i in range(0, len(data), block_size):
-        block = data[i:i+block_size]
-        if len(block) < block_size:
-            block += bytes(block_size - len(block))
-            
-        rand_val = random.randint(1, 2**block_size_bits - 1)
-        rand_bytes = rand_val.to_bytes(block_size, 'big')
-        transformed_block = bytes([(b - rand_bytes[j%block_size]) % 256 
-                                for j,b in enumerate(block)])
+    for i in range(0, len(data), 8):
+        block = data[i:i+8]
+        original_num = struct.unpack('>Q', block)[0]
         
-        transformed.extend(transformed_block)
-        metadata.extend(rand_bytes)
+        # Generate random 64-bit number (1 to 2^64-1)
+        rand_num = random.randint(1, 2**64-1)
+        transformed_num = (original_num - rand_num) % (2**64)
+        
+        transformed.extend(struct.pack('>Q', transformed_num))
+        metadata.extend(struct.pack('>Q', rand_num))
     
     return bytes(transformed), bytes(metadata)
 
 # ======================
-# Quantum Storage
+# Classical Quantum Storage Simulation
 # ======================
 
-class QuantumStorage:
+class ClassicalQuantumStorage:
     def __init__(self):
-        self.simulator = Aer.get_backend('qasm_simulator')
         self.qubits_per_chunk = 2000  # Target qubit count
         self.storage = {}
         self.next_id = 0
     
     def store(self, data):
-        """Store data in 2000-qubit chunks"""
+        """Simulate storing data in 2000-qubit chunks"""
         bit_string = ''.join(f'{byte:08b}' for byte in data)
         chunk_ids = []
         
@@ -79,61 +77,54 @@ class QuantumStorage:
             chunk_id = f"q{self.next_id}"
             self.next_id += 1
             
-            # Create quantum circuit
-            qr = QuantumRegister(len(chunk_bits))
-            qc = QuantumCircuit(qr)
-            
-            # Encode bits
-            for pos, bit in enumerate(chunk_bits):
-                if bit == '1':
-                    qc.x(pos)
-            
+            # Simulate quantum state by storing the bit string
             self.storage[chunk_id] = {
-                'circuit': qc,
                 'bits': chunk_bits,
                 'measured': False
             }
             chunk_ids.append(chunk_id)
+            
+            print(f"Stored chunk {chunk_id} with {len(chunk_bits)} simulated qubits")
         
         return chunk_ids
     
     def retrieve(self, chunk_ids):
-        """Retrieve data from quantum storage"""
-        full_bits = []
+        """Simulate quantum measurement"""
+        full_bit_string = []
         
         for chunk_id in chunk_ids:
             if chunk_id not in self.storage:
                 raise ValueError(f"Missing chunk {chunk_id}")
             
             chunk = self.storage[chunk_id]
-            if not chunk['measured']:
-                self._measure(chunk_id)
             
-            full_bits.append(chunk['bits'])
+            # Simulate quantum measurement by adding random noise (optional)
+            if not chunk['measured']:
+                measured_bits = ''.join(str(int(bit) ^ (0 if random.random() > 0.001 else 1)) 
+                                      for bit in chunk['bits'])
+                chunk['bits'] = measured_bits
+                chunk['measured'] = True
+            
+            full_bit_string.append(chunk['bits'])
         
         # Convert to bytes
-        bit_string = ''.join(full_bits)
-        return bytes(int(bit_string[i:i+8], 2) 
-                for i in range(0, len(bit_string), 8))
-    
-    def _measure(self, chunk_id):
-        """Simulate quantum measurement"""
-        chunk = self.storage[chunk_id]
-        qc = chunk['circuit'].copy()
-        qc.measure_all()
+        bit_string = ''.join(full_bit_string)
+        byte_data = bytearray()
         
-        job = execute(qc, self.simulator, shots=1)
-        result = job.result()
-        measured = list(result.get_counts().keys())[0][::-1]
+        for i in range(0, len(bit_string), 8):
+            byte_bits = bit_string[i:i+8]
+            if len(byte_bits) < 8:
+                byte_bits += '0' * (8 - len(byte_bits))
+            byte_data.append(int(byte_bits, 2))
         
-        chunk['bits'] = measured
-        chunk['measured'] = True
+        return bytes(byte_data)
     
     def delete(self, chunk_ids):
-        """Release quantum resources"""
+        """Release simulated storage"""
         for chunk_id in chunk_ids:
             if chunk_id in self.storage:
                 del self.storage[chunk_id]
+                print(f"Released chunk {chunk_id}")
 
 # ======================
 # Compression Pipeline
@@ -145,15 +136,14 @@ def apply_transformations(data, iterations=5):
         (add_random_noise, True),
         (subtract_1_from_each_byte, False),
         (move_bits_left, True),
-        (random_minus_blocks, False)
+        (random_64bit_minus, False)
     ]
     
     for _ in range(iterations):
         transform, needs_param = random.choice(transforms)
         try:
-            if transform == random_minus_blocks:
-                bits = random.choice([64, 128, 256])
-                data, _ = transform(data, bits)
+            if transform == random_64bit_minus:
+                data, _ = transform(data)
             elif needs_param:
                 param = random.randint(1, 7)
                 data = transform(data, param)
@@ -176,15 +166,15 @@ def compress_file(input_path, output_path, quantum_store=False):
     header = len(compressed).to_bytes(4, 'big')
     final_data = header + compressed
     
-    # Quantum storage
+    # Classical quantum storage simulation
     if quantum_store:
-        qstore = QuantumStorage()
+        qstore = ClassicalQuantumStorage()
         chunk_ids = qstore.store(final_data)
         
-        # Verify
+        # Verify retrieval
         retrieved = qstore.retrieve(chunk_ids)
         if retrieved != final_data:
-            print("Quantum verification failed!")
+            print("Warning: Simulated quantum storage had errors!")
         
         # Save metadata
         with open(f"{output_path}.quant", 'w') as f:
@@ -201,9 +191,9 @@ def compress_file(input_path, output_path, quantum_store=False):
 # ======================
 
 def main():
-    print("Quantum Compression System")
+    print("Enhanced Compression System with Classical Quantum Simulation")
     print("1. Compress (Classical)")
-    print("2. Compress (Quantum Storage)")
+    print("2. Compress (Quantum Simulation)")
     print("3. Decompress")
     
     choice = input("Select (1-3): ")
