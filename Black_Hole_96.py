@@ -1,73 +1,61 @@
-import zlib
 from qiskit import QuantumRegister
+import paq
 
-# Simulate storing in qubits
+# Store data using Qiskit QuantumRegister (simulated)
 def store_in_qubits(data):
     bit_length = len(data) * 8
     if bit_length > 3000:
         raise ValueError("Data too large to store in 3000 qubits.")
+    
     qubits = QuantumRegister(bit_length, name='q')
     print(f"Simulated storing {bit_length} bits in {len(qubits)} qubits.")
     return qubits
 
-# Append compressed data with 4-byte size header to end of file
-def compress_append_to_file(input_file):
+# Write compressed file with 4-byte size header
+def compress_to_file(input_file, output_file):
     with open(input_file, 'rb') as f:
-        original_data = f.read()
-
-    compressed = zlib.compress(original_data)
+        data = f.read()
+    
+    compressed = paq.compress(data)
     size_bytes = len(compressed).to_bytes(4, byteorder='big')
-    append_data = size_bytes + compressed
+    final_data = size_bytes + compressed
 
-    store_in_qubits(append_data)
+    store_in_qubits(final_data)  # Simulate storing in qubits
 
-    with open(input_file, 'ab') as f:
-        f.write(append_data)
-
-    print(f"Compressed data appended to end of: {input_file}")
-
-# Extract and remove compressed data from the end
-def extract_from_end(input_file, output_file):
-    with open(input_file, 'rb') as f:
-        full_data = f.read()
-
-    if len(full_data) < 4:
-        raise ValueError("File too small for valid extraction.")
-
-    size_bytes = full_data[-(4):]
-    compressed_size = int.from_bytes(size_bytes, byteorder='big')
-    total_append_size = compressed_size + 4
-
-    if len(full_data) < total_append_size:
-        raise ValueError("Not enough data for stated compressed size.")
-
-    compressed_data = full_data[-total_append_size + 4:-4]
-    decompressed_data = zlib.decompress(compressed_data)
-
-    # Save decompressed data
     with open(output_file, 'wb') as f:
-        f.write(decompressed_data)
+        f.write(final_data)
 
-    # Remove the appended data from original file
-    new_data = full_data[:-total_append_size]
-    with open(input_file, 'wb') as f:
-        f.write(new_data)
+    print("Compression complete. Stored in file:", output_file)
 
-    print(f"Extraction complete. Original file restored, output saved to: {output_file}")
+# Read compressed file with 4-byte header and extract
+def extract_from_file(input_file, output_file):
+    with open(input_file, 'rb') as f:
+        stored_data = f.read()
+
+    size = int.from_bytes(stored_data[:4], byteorder='big')
+    compressed = stored_data[4:4+size]
+
+    data = paq.decompress(compressed)
+
+    with open(output_file, 'wb') as f:
+        f.write(data)
+
+    print("Extraction complete. Output file:", output_file)
 
 # CLI
 if __name__ == "__main__":
     print("Choose mode:")
-    print("1. Compress (append to file)")
-    print("2. Extract and restore")
+    print("1. Compress")
+    print("2. Extract")
     mode = input("Enter 1 or 2: ")
 
     if mode == "1":
-        in_file = input("Enter file name to compress and append to: ")
-        compress_append_to_file(in_file)
+        in_file = input("Enter input file name: ")
+        out_file = input("Enter output (compressed) file name: ")
+        compress_to_file(in_file, out_file)
     elif mode == "2":
-        in_file = input("Enter file name to extract from: ")
-        out_file = input("Enter output file name for decompressed data: ")
-        extract_from_end(in_file, out_file)
+        in_file = input("Enter input (compressed) file name: ")
+        out_file = input("Enter output (extracted) file name: ")
+        extract_from_file(in_file, out_file)
     else:
         print("Invalid choice.")
