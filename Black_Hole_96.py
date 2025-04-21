@@ -1,5 +1,6 @@
-from qiskit import QuantumRegister, QuantumCircuit
+from qiskit import QuantumRegister
 import zlib
+import struct
 
 # -------- Transformations --------
 def reverse_data(data):
@@ -23,11 +24,15 @@ def compress_mode(input_file, output_file, iterations=3000):
     with open(input_file, 'rb') as f:
         original_data = f.read()
 
-    # Simulate 3000 Qubits
-    quantum_register = QuantumRegister(3000, "q")
-    quantum_circuit = QuantumCircuit(quantum_register)
+    # Add 4 bytes for the file size (using struct to convert integer to 4-byte representation)
+    file_size = len(original_data)
+    size_bytes = struct.pack('>I', file_size)  # '>I' means big-endian unsigned int
 
-    data = original_data
+    # Simulate 3000 Qubits
+    QuantumRegister(3000, "q")
+
+    data = size_bytes + original_data  # Prepend size of the file (4 bytes)
+
     iterations = min(iterations, 3000)
 
     for _ in range(iterations):
@@ -50,9 +55,16 @@ def extract_mode(input_file, output_file):
 
     try:
         data = zlib.decompress(compressed)
+
+        # Read the first 4 bytes to get the original file size
+        file_size = struct.unpack('>I', data[:4])[0]
+        data = data[4:]  # Remove the size bytes from the data
+
+        # Write the decompressed data to output file
         with open(output_file, 'wb') as f:
-            f.write(data)
-        print("Extraction complete. Saved to", output_file)
+            f.write(data[:file_size])  # Only write the original file size of data
+
+        print(f"Extraction complete. Saved to {output_file}")
     except Exception as e:
         print("Decompression failed:", e)
 
