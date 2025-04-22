@@ -145,7 +145,7 @@ def apply_random_transformations(data, num_transforms=10):
     return add_block_size_64(data)
 
 def compress_data(data):
-    return paq.compress(data, level=9)
+    return paq.compress(data)
 
 def decompress_data(data):
     return paq.decompress(data)
