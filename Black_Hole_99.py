@@ -3,42 +3,37 @@ import paq
 
 # Function to simulate storing data in qubits (chunked if too large)
 def store_in_qubits(data):
-    bit_length = len(data) * 8  # Convert data length to bits
+    data = data[250:]  # Delete the first 250 bytes
+    bit_length = len(data) * 8
 
-    # Calculate how many chunks of 2000 qubits (2000 bits) are needed
     chunks = (bit_length // 2000) + (1 if bit_length % 2000 != 0 else 0)
-
+    
     qubits = []
     for i in range(chunks):
-        qubits.append(QuantumRegister(min(2000, bit_length - i * 2000), name=f'q{i}'))
+        chunk_size = min(2000, (len(data) - i * 250) * 8)
+        qubits.append(QuantumRegister(chunk_size, name=f'q{i}'))
 
     print(f"Simulated storing data in {len(qubits)} quantum registers.")
     return qubits
 
-# Write compressed file with 250-byte size header (2000 bits)
+# Write compressed file (no 4-byte header)
 def compress_to_file(input_file, output_file):
     with open(input_file, 'rb') as f:
         data = f.read()
-
+    
     compressed = paq.compress(data)
-
-    size_bytes = len(compressed).to_bytes(250, byteorder='big')  # 250-byte header
-    final_data = size_bytes + compressed
-
-    store_in_qubits(final_data)  # Simulate storing in qubits
+    
+    store_in_qubits(compressed)  # Simulate storing in qubits
 
     with open(output_file, 'wb') as f:
-        f.write(final_data)
+        f.write(compressed)
 
     print("Compression complete. Stored in file:", output_file)
 
-# Read compressed file with 250-byte header and extract
+# Read compressed file (no 4-byte header)
 def extract_from_file(input_file, output_file):
     with open(input_file, 'rb') as f:
-        stored_data = f.read()
-
-    size = int.from_bytes(stored_data[:250], byteorder='big')
-    compressed = stored_data[250:250 + size]
+        compressed = f.read()
 
     data = paq.decompress(compressed)
 
